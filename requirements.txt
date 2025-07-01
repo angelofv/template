@@ -1,0 +1,13 @@
+ipython
+jupyterlab
+matplotlib
+notebook
+numpy
+pandas
+pytest
+python-dotenv
+scikit-learn
+ruff
+prefect
+omegaconf
+-e .

@@ -1,0 +1,3 @@
+path:
+  raw: "data/01_raw" # TODO: à compléter
+  processed: "data/02_processed" # TODO: à compléter
