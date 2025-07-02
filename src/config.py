@@ -8,9 +8,7 @@ from omegaconf import DictConfig, OmegaConf
 
 load_dotenv()
 
-# -----------------------------------------------------------------------------
 # Helpers
-# -----------------------------------------------------------------------------
 
 # Resolve the repository root once at import time.  ``config.py`` lives in
 # ``<repo>/src/``, so two ``.parent`` calls go back to the repository root.
@@ -30,10 +28,7 @@ def _to_repo_path(path: str | Path) -> Path:
     return p if p.is_absolute() else _REPO_ROOT / p
 
 
-# -----------------------------------------------------------------------------
 # Public API
-# -----------------------------------------------------------------------------
-
 def load_config(
     *,
     preproc: str | Path = "configs/preprocessing.yaml",
