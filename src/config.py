@@ -34,6 +34,7 @@ def load_config(
     preproc: str | Path = "configs/preprocessing.yaml",
     model: str | Path = "configs/modeling.yaml",
     plot: str | Path = "configs/plotting.yaml",
+    mlflow: str | Path = "configs/mlflow.yaml",
 ) -> DictConfig:
     """Load the three YAML files (preproc, model, plot) and merge them.
 
@@ -53,13 +54,13 @@ def load_config(
     plot = os.getenv("PLOT_CONFIG", str(plot))
 
     # Resolve to absolute paths anchored at the repo root if necessary
-    paths = [_to_repo_path(p) for p in (preproc, model, plot)]
+    paths = [_to_repo_path(p) for p in (preproc, model, plot, mlflow)]
 
-    # Sanity‑check existence
+    # Sanity-check existence
     for p in paths:
         if not p.exists():
             raise FileNotFoundError(f"Config manquante : {p}")
 
-    # Load then merge with OmegaConf (order matters!)
+    # Load then merge (ordre : preproc, model, plot, mlflow)
     cfgs = [OmegaConf.load(p) for p in paths]
     return OmegaConf.merge(*cfgs)

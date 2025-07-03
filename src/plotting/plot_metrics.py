@@ -7,4 +7,25 @@ from prefect import get_run_logger, task
 def plot_metrics(model, df_clean: pd.DataFrame, cfg: DictConfig):
     logger = get_run_logger()
     logger.info("Plotting...")
-    # TODO
+    
+    # TODO : Replace by your own plotting logic
+    # 1) calcul de la même accuracy
+    target = cfg.model.get("target_column", "target")
+    X = df.drop(columns=[target])
+    y = df[target]
+    preds = model.predict(X)
+    acc = (preds == y).mean()
+
+    # 2) plot minimal
+    fig, ax = plt.subplots()
+    ax.bar(["accuracy"], [acc])
+    ax.set_ylim(0, 1)
+    ax.set_ylabel("score")
+    fig.tight_layout()
+
+    # 3) sauvegarde et log
+    out = "accuracy.png"
+    fig.savefig(out); plt.close(fig)
+    mlflow.log_artifact(out, artifact_path="plots")
+    return out
+ 

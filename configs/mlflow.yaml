@@ -1,0 +1,3 @@
+tracking:
+  uri: "${MLFLOW_TRACKING_URI:-file:./mlruns}"
+  experiment_name: "${MLFLOW_EXPERIMENT:-default}"

@@ -1,3 +1,4 @@
+import mlflow
 from prefect import flow, get_run_logger
 
 from src.config import load_config
@@ -10,18 +11,23 @@ from src.preprocessing import load_raw_data, preprocess
 def run():
     logger = get_run_logger()
     cfg = load_config()
-    logger.info("Configuration chargée")
+    # Setup MLflow
+    mlflow.set_tracking_uri(cfg.tracking.uri)
+    mlflow.set_experiment(cfg.tracking.experiment_name)
 
-    # 1. Pré-traitement
-    df_raw = load_raw_data(cfg)
-    df_clean = preprocess(df_raw, cfg)
+    with mlflow.start_run():
+        logger.info("Configuration chargée")
 
-    # 2. Modélisation
-    model = train_model(df_clean, cfg)
+        # 1. Pré-traitement
+        df_raw = load_raw_data(cfg)
+        df_clean = preprocess(df_raw, cfg)
 
-    # 3. Reporting
-    report_path = plot_metrics(model, df_clean, cfg)
-    logger.info(f"Rapport généré : {report_path}")
+        # 2. Modélisation
+        model = train_model(df_clean, cfg)
+
+        # 3. Reporting
+        report_path = plot_metrics(model, df_clean, cfg)
+        logger.info(f"Rapport généré : {report_path}")
 
 
 if __name__ == "__main__":
