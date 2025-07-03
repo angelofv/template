@@ -6,9 +6,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from omegaconf import DictConfig, OmegaConf
 
+# Load environment variables from a .env file if present
 load_dotenv()
-
-# Helpers
 
 # Resolve the repository root once at import time.  ``config.py`` lives in
 # ``<repo>/src/``, so two ``.parent`` calls go back to the repository root.
@@ -29,6 +28,8 @@ def _to_repo_path(path: str | Path) -> Path:
 
 
 # Public API
+
+
 def load_config(
     *,
     preproc: str | Path = "configs/preprocessing.yaml",
@@ -36,31 +37,30 @@ def load_config(
     plot: str | Path = "configs/plotting.yaml",
     mlflow: str | Path = "configs/mlflow.yaml",
 ) -> DictConfig:
-    """Load the three YAML files (preproc, model, plot) and merge them.
+    """Load YAML config files (preproc, model, plot, mlflow), merge them, and apply env overrides.
 
-    The paths can be overridden via environment variables ``PREPROC_CONFIG``,
-    ``MODEL_CONFIG`` and ``PLOT_CONFIG``.  Whatever the source, paths are first
-    converted to absolute by :pyfunc:`_to_repo_path`, so they are resolved
-    relative to the *project root* if they are not already absolute.
-
-    Returns
-    -------
-    DictConfig
-        A single *OmegaConf* configuration containing all three sub‑configs.
+    Environment variables (PREPROC_CONFIG, MODEL_CONFIG, PLOT_CONFIG, MLFLOW_CONFIG) can override file paths.
+    MLflow settings (MLFLOW_TRACKING_URI, MLFLOW_EXPERIMENT) override YAML values.
     """
-    # Environment variable overrides (highest priority)
+    # 1. Override config file paths from environment variables if set
     preproc = os.getenv("PREPROC_CONFIG", str(preproc))
     model = os.getenv("MODEL_CONFIG", str(model))
     plot = os.getenv("PLOT_CONFIG", str(plot))
+    mlflow = os.getenv("MLFLOW_CONFIG", str(mlflow))
 
-    # Resolve to absolute paths anchored at the repo root if necessary
+    # 2. Resolve to absolute paths anchored at the repo root if necessary
     paths = [_to_repo_path(p) for p in (preproc, model, plot, mlflow)]
 
-    # Sanity-check existence
+    # 3. Sanity-check existence
     for p in paths:
         if not p.exists():
             raise FileNotFoundError(f"Config manquante : {p}")
 
-    # Load then merge (ordre : preproc, model, plot, mlflow)
-    cfgs = [OmegaConf.load(p) for p in paths]
-    return OmegaConf.merge(*cfgs)
+    # 4. Load and merge all configs (order matters)
+    cfg = OmegaConf.merge(*(OmegaConf.load(p) for p in paths))
+
+    # 5. Override MLflow settings from environment or keep YAML defaults
+    cfg.tracking.uri = os.getenv("MLFLOW_TRACKING_URI", cfg.tracking.uri)
+    cfg.tracking.experiment_name = os.getenv("MLFLOW_EXPERIMENT", cfg.tracking.experiment_name)
+
+    return cfg
