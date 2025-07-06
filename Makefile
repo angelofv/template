@@ -42,7 +42,7 @@ create_environment: ## Create a Conda env $(PROJECT_NAME)
 # PREFECT / MLFLOW                                                              #
 #################################################################################
 
-MLFLOW_URI  ?= file:./mlruns     # MLflow backend dir
+MLFLOW_URI  ?= ./mlruns     # MLflow backend dir
 MLFLOW_PORT ?= 5000              # MLflow UI port
 SERVER_PORT ?= 4200              # Prefect server port
 
@@ -57,7 +57,7 @@ mlflow-ui: ## Launch MLflow UI
 	          --host 127.0.0.1 --port $(MLFLOW_PORT)
 
 mlflow-clean: ## Delete local mlruns directory
-	rm -rf $(MLFLOW_URI:file:=)
+	rm -rf $(MLFLOW_URI)
 
 #################################################################################
 # Self‑documenting help                                                         #
