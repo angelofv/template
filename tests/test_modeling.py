@@ -1,5 +1,5 @@
-from src.plotting import plot_metrics
+from src.modeling import train_model
 
 
-def test_plot_metrics_task_is_callable() -> None:
-    assert callable(plot_metrics), "plot_metrics n’est pas appelable"
+def test_train_model_task_is_callable() -> None:
+    assert callable(train_model), "train_model n’est pas appelable"
