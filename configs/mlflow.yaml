@@ -1,3 +1,0 @@
-tracking:
-  uri: "file:./mlruns"
-  experiment_name: "Default"

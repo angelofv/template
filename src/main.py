@@ -1,3 +1,5 @@
+import os
+
 import mlflow
 from prefect import flow, get_run_logger
 
@@ -11,9 +13,13 @@ from src.preprocessing import load_raw_data, preprocess
 def run():
     logger = get_run_logger()
     cfg = load_config()
-    # Setup MLflow
-    mlflow.set_tracking_uri(cfg.tracking.uri)
-    mlflow.set_experiment(cfg.tracking.experiment_name)
+
+    # Setup MLflow depuis l'environnement (ou valeurs par défaut)
+    tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
+    experiment_name = os.getenv("MLFLOW_EXPERIMENT", "Default")
+
+    mlflow.set_tracking_uri(tracking_uri)
+    mlflow.set_experiment(experiment_name)
 
     with mlflow.start_run():
         logger.info("Configuration chargée")
