@@ -26,7 +26,7 @@ lint: ## Lint using ruff
 	ruff check .
 
 format: ## Auto‑format code with ruff
-	ruff check --fix .
+	ruff format . && ruff check --fix .
 
 test: ## Run unit tests with pytest
 	$(PYTHON_INTERPRETER) -m pytest tests
