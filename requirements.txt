@@ -11,4 +11,5 @@ ruff
 prefect
 omegaconf
 mlflow
+dvc[s3]
 -e .
