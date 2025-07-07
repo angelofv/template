@@ -46,7 +46,7 @@ services:
     command:
       - python
       - -m
-      - src.main
+      - src.run
     volumes:
       - .:/opt/app
       - mlflow_runs:/opt/app/mlruns

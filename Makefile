@@ -31,8 +31,8 @@ format: ## Auto‑format code with ruff
 test: ## Run unit tests with pytest
 	$(PYTHON_INTERPRETER) -m pytest tests
 
-run: ## Run the Prefect pipeline (python -m src.main)
-	$(PYTHON_INTERPRETER) -m src.main
+run: ## Run the Prefect pipeline (python -m src.run)
+	$(PYTHON_INTERPRETER) -m src.run
 
 create_environment: ## Create a Conda env $(PROJECT_NAME)
 	conda create --name $(PROJECT_NAME) python=$(PYTHON_VERSION) -y
@@ -66,8 +66,8 @@ COMPOSE := docker compose
 
 ## up : démarre mlflow & prefect en arrière-plan, suit leurs logs, puis lance app
 up:
-	@echo "→ Démarrage de mlflow et prefect en mode détaché…"
-	$(COMPOSE) up -d mlflow prefect
+	@echo "→ Reconstruction & démarrage de mlflow et prefect…"
+	$(COMPOSE) up -d --build mlflow prefect
 	@printf "⏳ En attente que Prefect API soit disponible "
 	@until curl -s http://localhost:4200/api/health >/dev/null 2>&1; do \
 	  printf "."; sleep 1; \
@@ -75,8 +75,8 @@ up:
 	@echo " ✔ Prefect prêt !"
 	@echo "→ Suivi des logs MLflow + Prefect en arrière-plan…"
 	@$(COMPOSE) logs -f mlflow prefect & \
-	 echo "→ Lancement de app au premier plan (CTRL+C pour stopper)…" && \
-	 $(COMPOSE) up app
+	 echo "→ Reconstruction & lancement de app (CTRL+C pour stopper)…" && \
+	 $(COMPOSE) up --build --no-deps app
 
 ## down : arrête et supprime tous les services et volumes
 down:

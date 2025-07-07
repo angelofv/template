@@ -49,4 +49,4 @@ COPY --chown=app:app . .
 USER app
 
 # 11. Lancer le pipeline par défaut
-ENTRYPOINT ["python", "-m", "src.main"]
+ENTRYPOINT ["python", "-m", "src.run"]

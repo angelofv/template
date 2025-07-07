@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from kedro.io import KedroDataCatalog
 import mlflow
 import mlflow.exceptions
 import mlflow.sklearn
@@ -10,7 +11,9 @@ from sklearn.ensemble import RandomForestClassifier
 
 
 @task
-def train_model(df_clean: pd.DataFrame, cfg: DictConfig):
+def train_model(
+    df_clean: pd.DataFrame, cfg: DictConfig, catalog: KedroDataCatalog
+) -> RandomForestClassifier:
     logger = get_run_logger()
     logger.info("Entrainement...")
 
@@ -30,10 +33,11 @@ def train_model(df_clean: pd.DataFrame, cfg: DictConfig):
     model = RandomForestClassifier(n_estimators=n_estimators)
     model.fit(X, y)
 
-    # 4. Évaluation + métrique
-    mlflow.log_metric("train_accuracy", float(model.score(X, y)))
+    # 4. Evaluation
+    score = float(model.score(X, y))
 
-    # 5. Log du modèle
+    # 5. Log métriques et modèle + sauvegarde
+    mlflow.log_metric("train_accuracy", score)
     mlflow.sklearn.log_model(model, name="model")
-
+    catalog.save("model", model)
     return model
