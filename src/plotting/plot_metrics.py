@@ -14,7 +14,7 @@ def plot_metrics(model, df_clean: pd.DataFrame, cfg: DictConfig):
     # 1) calcul de la même accuracy
     params = cfg.get("model", {})
     target = params.get("target_column", "target")
-    
+
     X = df_clean.drop(columns=[target])
     y = df_clean[target]
     preds = model.predict(X)

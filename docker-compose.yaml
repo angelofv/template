@@ -1,0 +1,64 @@
+services:
+  # ───────────────── MLflow UI (file-store) ─────────────────
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    command:
+      - mlflow
+      - server
+      - --backend-store-uri
+      - /mlruns
+      - --artifacts-destination
+      - /mlruns
+      - --serve-artifacts
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5000"
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_runs:/mlruns   # runs + artefacts
+
+  # ───────────────── Prefect Server ─────────────────
+  prefect:
+    image: prefecthq/prefect:3-latest
+    command:
+      - prefect
+      - server
+      - start
+      - --host
+      - 0.0.0.0
+      - --port
+      - "4200"
+    ports:
+      - "4200:4200"
+    volumes:
+      - prefect_home:/home/app/.prefect
+
+  # ─────────────── Application (one-shot) ───────────────
+  app:
+    build: .
+    depends_on:
+      mlflow:
+        condition: service_started
+      prefect:
+        condition: service_started
+    command:
+      - python
+      - -m
+      - src.main
+    volumes:
+      - .:/opt/app
+      - mlflow_runs:/opt/app/mlruns
+    environment:
+      MLFLOW_TRACKING_URI:    http://mlflow:5000
+      PREFECT_API_URL:        http://prefect:4200/api
+      PYTHONUNBUFFERED:       "1"
+      PREFECT_LOGGING_LEVEL:  INFO
+      RICH_FORCE_TERMINAL:    "1"
+      TERM:                   xterm-256color
+      FORCE_COLOR:            "1"
+
+volumes:
+  mlflow_runs:
+  prefect_home:

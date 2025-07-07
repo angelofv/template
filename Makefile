@@ -59,6 +59,30 @@ mlflow-ui: ## Launch MLflow UI
 mlflow-clean: ## Delete local mlruns directory
 	rm -rf $(MLFLOW_URI)
 
+# Docker
+COMPOSE := docker compose
+
+.PHONY: up down
+
+## up : démarre mlflow & prefect en arrière-plan, suit leurs logs, puis lance app
+up:
+	@echo "→ Démarrage de mlflow et prefect en mode détaché…"
+	$(COMPOSE) up -d mlflow prefect
+	@printf "⏳ En attente que Prefect API soit disponible "
+	@until curl -s http://localhost:4200/api/health >/dev/null 2>&1; do \
+	  printf "."; sleep 1; \
+	done
+	@echo " ✔ Prefect prêt !"
+	@echo "→ Suivi des logs MLflow + Prefect en arrière-plan…"
+	@$(COMPOSE) logs -f mlflow prefect & \
+	 echo "→ Lancement de app au premier plan (CTRL+C pour stopper)…" && \
+	 $(COMPOSE) up app
+
+## down : arrête et supprime tous les services et volumes
+down:
+	@echo "→ Arrêt de tous les services et nettoyage…"
+	$(COMPOSE) down -v
+
 #################################################################################
 # Self‑documenting help                                                         #
 #################################################################################
