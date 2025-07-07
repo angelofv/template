@@ -1,4 +1,0 @@
-path:
-  train_data: "data/02_processed" # TODO: à compléter
-  test_data:  "data/02_processed" # TODO: à compléter
-  model: "data/03_models" # TODO: à compléter
