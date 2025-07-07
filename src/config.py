@@ -14,31 +14,49 @@ load_dotenv()
 # Racine du dépôt
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
-
 def _to_repo_path(path: str | Path) -> Path:
     """Convertit un chemin relatif en absolu depuis la racine du repo."""
     p = Path(path)
     return p if p.is_absolute() else _REPO_ROOT / p
 
-
 def load_config(
     *,
-    preproc: str | Path = "configs/preprocessing.yaml",
-    model: str | Path = "configs/modeling.yaml",
-    plot: str | Path = "configs/plotting.yaml",
+    preprocessing: str | Path = "configs/preprocessing.yaml",
+    modeling: str | Path = "configs/modeling.yaml",
+    plotting: str | Path = "configs/plotting.yaml",
 ) -> DictConfig:
-    """Charge et fusionne les configs YAML (prétraitement, modélisation, plot)."""
-    preproc = os.getenv("PREPROC_CONFIG", str(preproc))
-    model = os.getenv("MODEL_CONFIG", str(model))
-    plot = os.getenv("PLOT_CONFIG", str(plot))
+    """
+    Charge séparément les fichiers YAML de preprocessing, modeling et plotting,
+    et les expose sous cfg.preprocessing, cfg.modeling, cfg.plotting.
+    """
+    # Récupère les chemins via les variables d'environnement (facultatif)
+    preprocessing = os.getenv("PREPROCESSING_CONFIG", str(preprocessing))
+    modeling = os.getenv("MODELING_CONFIG", str(modeling))
+    plotting = os.getenv("PLOTTING_CONFIG", str(plotting))
 
-    paths = [_to_repo_path(p) for p in (preproc, model, plot)]
-    for p in paths:
+    # Construction des chemins absolus
+    paths = {
+        "preprocessing": _to_repo_path(preprocessing),
+        "modeling": _to_repo_path(modeling),
+        "plotting": _to_repo_path(plotting),
+    }
+    # Vérification d'existence
+    for name, p in paths.items():
         if not p.exists():
-            raise FileNotFoundError(f"Config manquante : {p}")
+            raise FileNotFoundError(f"Config manquante : {name} -> {p}")
 
-    return OmegaConf.merge(*(OmegaConf.load(p) for p in paths))
+    # Chargement individuel
+    cfg_pre = OmegaConf.load(paths["preprocessing"])
+    cfg_mod = OmegaConf.load(paths["modeling"])
+    cfg_plt = OmegaConf.load(paths["plotting"])
 
+    # Regroupement dans un unique DictConfig
+    full_cfg = OmegaConf.create({
+        "preprocessing": cfg_pre,
+        "modeling": cfg_mod,
+        "plotting": cfg_plt,
+    })
+    return full_cfg
 
 def load_catalog() -> KedroDataCatalog:
     """Charge le DataCatalog Kedro en utilisant la nouvelle classe KedroDataCatalog."""

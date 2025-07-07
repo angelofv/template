@@ -1,33 +1,26 @@
-from kedro.io import KedroDataCatalog
-from omegaconf import DictConfig
 import pandas as pd
 from prefect import get_run_logger, task
 from sklearn.datasets import load_iris
 
 
 @task
-def load_raw_data(catalog: KedroDataCatalog) -> pd.DataFrame:
+def load_raw_data() -> pd.DataFrame:
     logger = get_run_logger()
-    logger.info("Extraction…")
+    logger.info("Extract raw data")
 
     # TODO : Replace by your own data loading logic
-    # 1) Chargement
     df = load_iris(as_frame=True).frame
-
-    # 2) Sauvegarde via Kedro Catalog
-    catalog.save("raw_data", df)
     return df
 
 
 @task
-def preprocess(df_raw: pd.DataFrame, cfg: DictConfig, catalog: KedroDataCatalog) -> pd.DataFrame:
+def preprocess(
+    df_raw: pd.DataFrame,
+    dropna_columns: list[str],
+) -> pd.DataFrame:
     logger = get_run_logger()
-    logger.info("Preprocessing...")
-
+    logger.info("Preprocessing data")
+    
     # TODO : Replace by your own preprocessing logic
-    # 1) Exemple de nettoyage
-    df_processed = df_raw.dropna()
-
-    # 2) Sauvegarde via Kedro Catalog
-    catalog.save("processed_data", df_processed)
+    df_processed = df_raw.dropna(subset=dropna_columns)
     return df_processed

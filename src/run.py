@@ -2,15 +2,18 @@ import mlflow
 from prefect import flow, get_run_logger
 
 from src.config import load_catalog, load_config
-from src.modeling import train_model
-from src.plotting import plot_metrics
-from src.preprocessing import load_raw_data, preprocess
+from src.modeling.train import train_model
+from src.plotting.plot_metrics import plot_metrics
+from src.preprocessing.extract import load_raw_data, preprocess
 from src.utils import init_mlflow
 
 
 @flow(name="ML Pipeline")
 def run():
     logger = get_run_logger()
+    logger.info("Load config and catalog")
+
+    # 1) Chargement des configs et du catalog
     cfg = load_config()
     catalog = load_catalog()
 
@@ -18,18 +21,35 @@ def run():
     init_mlflow()
 
     with mlflow.start_run():
-        logger.info("Configuration & catalog chargés")
 
-        # 1. Pré-traitement
-        df_raw = load_raw_data(catalog)
-        df_clean = preprocess(df_raw, cfg, catalog)
+        # 2) Extraction
+        df_raw = load_raw_data()
+        catalog.save("raw_data", df_raw)
 
-        # 2. Modélisation
-        model = train_model(df_clean, cfg, catalog)
+        # 3) Prétraitement
+        df_clean = preprocess(
+            df_raw,
+            dropna_columns=cfg.preprocessing.dropna_columns,
+        )
+        catalog.save("processed_data", df_clean)
 
-        # 3. Reporting
-        _ = plot_metrics(model, df_clean, cfg, catalog)
-        logger.info("Pipeline terminé")
+        # 4) Entraînement
+        model = train_model(
+            df_clean,
+            n_estimators=cfg.modeling.n_estimators,
+            target=cfg.modeling.target,
+        )
+        catalog.save("model", model)
+
+        # 5) Reporting
+        fig = plot_metrics(
+            model,
+            df_clean,
+            target_column=cfg.plotting.target_column,
+        )
+        catalog.save("accuracy_plot", fig)
+
+        logger.info("Pipeline completed successfully")
 
 
 if __name__ == "__main__":
