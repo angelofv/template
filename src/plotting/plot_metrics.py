@@ -33,5 +33,4 @@ def plot_metrics(
     # 3) Log + sauvegarde
     mlflow.log_figure(fig, "plots/accuracy.png")
     catalog.save("accuracy_plot", fig)
-
     return fig
