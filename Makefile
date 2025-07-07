@@ -23,7 +23,7 @@ clean: ## Delete compiled Python files & caches
 	rm -rf .pytest_cache .ruff_cache
 
 lint: ## Lint using ruff
-	ruff check .
+	ruff check . --fix
 
 format: ## Auto‑format code with ruff
 	ruff format . && ruff check --fix .

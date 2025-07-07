@@ -3,8 +3,8 @@ from __future__ import annotations
 import mlflow
 import mlflow.exceptions
 import mlflow.sklearn
-import pandas as pd
 from omegaconf import DictConfig
+import pandas as pd
 from prefect import get_run_logger, task
 from sklearn.ensemble import RandomForestClassifier
 
