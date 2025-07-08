@@ -64,21 +64,19 @@ COMPOSE := docker compose
 
 .PHONY: up down
 
-## up : démarre mlflow & prefect en arrière-plan, suit leurs logs, puis lance app
-up:
+up: ## up: start mlflow & prefect in the background, tail their logs, then launch the app
 	@$(COMPOSE) up -d mlflow prefect
-	@printf "⏳ En attente que Prefect API soit disponible "
+	@printf "⏳ Waiting for Prefect API to become available "
 	@until curl -s http://localhost:4200/api/health >/dev/null 2>&1; do \
 	  printf "."; sleep 1; \
 	done
-	@echo " ✔ Prefect prêt !"
+	@echo " ✔ Prefect is ready!"
 	@$(COMPOSE) up -d --build --no-deps app
 	@$(COMPOSE) logs -f mlflow prefect app \
 	  | sed 's/host\.docker\.internal/localhost/g'
 	  
-## down : arrête et supprime tous les services et volumes
-down:
-	@echo "→ Arrêt de tous les services et nettoyage…"
+down: ## down: stop and remove all services and volumes
+	@echo "→ Stopping all services and cleaning up…"
 	$(COMPOSE) down -v
 
 #################################################################################
