@@ -11,7 +11,7 @@ processed_data:
 # Modèle entraîné
 model:
   type: pickle.PickleDataset
-  filepath: data/03_models/rf_model.pkl
+  filepath: data/03_models/model.pkl
 
 # Rapport / figure
 accuracy_plot:

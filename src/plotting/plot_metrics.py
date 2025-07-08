@@ -1,21 +1,21 @@
 import matplotlib.pyplot as plt
 import mlflow
-from prefect import get_run_logger, task
+from prefect import flow, get_run_logger
 
 
-@task
+@flow
 def plot_metrics(
     model,
-    df_clean, 
-    target_column: str,
+    df_clean,
+    target: str,
 ) -> plt.Figure:
     logger = get_run_logger()
-    logger.info("Génération du graphique de métriques")
+    logger.info("Plotting metrics")
 
     # TODO : Replace by your own plotting logic
     # Prédictions & accuracy
-    X = df_clean.drop(columns=[target_column])
-    y = df_clean[target_column]
+    X = df_clean.drop(columns=[target])
+    y = df_clean[target]
     preds = model.predict(X)
     acc = (preds == y).mean()
 

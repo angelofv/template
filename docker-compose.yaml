@@ -43,6 +43,8 @@ services:
         condition: service_started
       prefect:
         condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command:
       - python
       - -m
@@ -51,8 +53,8 @@ services:
       - .:/opt/app
       - mlflow_runs:/opt/app/mlruns
     environment:
-      MLFLOW_TRACKING_URI:    http://mlflow:5000
-      PREFECT_API_URL:        http://prefect:4200/api
+      MLFLOW_TRACKING_URI:    http://host.docker.internal:5000
+      PREFECT_API_URL:        http://host.docker.internal:4200/api
       PYTHONUNBUFFERED:       "1"
       PREFECT_LOGGING_LEVEL:  INFO
       RICH_FORCE_TERMINAL:    "1"

@@ -21,7 +21,6 @@ def run():
     init_mlflow()
 
     with mlflow.start_run():
-
         # 2) Extraction
         df_raw = load_raw_data()
         catalog.save("raw_data", df_raw)
@@ -29,15 +28,15 @@ def run():
         # 3) Prétraitement
         df_clean = preprocess(
             df_raw,
-            dropna_columns=cfg.preprocessing.dropna_columns,
+            dropna_columns=cfg["preprocessing"]["dropna_columns"],
         )
         catalog.save("processed_data", df_clean)
 
         # 4) Entraînement
         model = train_model(
             df_clean,
-            n_estimators=cfg.modeling.n_estimators,
-            target=cfg.modeling.target,
+            n_estimators=cfg["modeling"]["n_estimators"],
+            target=cfg["modeling"]["target"],
         )
         catalog.save("model", model)
 
@@ -45,7 +44,7 @@ def run():
         fig = plot_metrics(
             model,
             df_clean,
-            target_column=cfg.plotting.target_column,
+            target=cfg["plotting"]["target"],
         )
         catalog.save("accuracy_plot", fig)
 

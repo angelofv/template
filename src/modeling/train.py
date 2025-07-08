@@ -3,18 +3,18 @@ from __future__ import annotations
 import mlflow
 import mlflow.sklearn
 import pandas as pd
-from prefect import get_run_logger, task
+from prefect import flow, get_run_logger
 from sklearn.ensemble import RandomForestClassifier
 
 
-@task
+@flow
 def train_model(
     df_clean: pd.DataFrame,
     n_estimators: int,
     target: str,
 ) -> RandomForestClassifier:
     logger = get_run_logger()
-    logger.info("Entraînement du modèle")
+    logger.info("Fitting model")
 
     # TODO : Replace by your own model training logic
     # 1) Log hyper-paramètre
