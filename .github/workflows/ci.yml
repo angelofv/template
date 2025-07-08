@@ -1,21 +1,18 @@
-# .github/workflows/ci.yml
-
 name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.10']
+        python-version: [ '3.10' ]
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -41,5 +38,11 @@ jobs:
       - name: Lint with ruff
         run: make lint
 
-      - name: Run tests
+      - name: Run tests & collect coverage
         run: make test
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: tests/coverage.xml
+          fail_ci_if_error: true

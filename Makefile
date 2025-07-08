@@ -21,6 +21,7 @@ clean: ## Delete compiled Python files & caches
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete
 	rm -rf .pytest_cache .ruff_cache
+	rm -f tests/coverage.xml
 
 lint: ## Lint using ruff
 	ruff check . --fix
@@ -28,8 +29,12 @@ lint: ## Lint using ruff
 format: ## Auto‑format code with ruff
 	ruff format . && ruff check --fix .
 
-test: ## Run unit tests with pytest
-	$(PYTHON_INTERPRETER) -m pytest tests
+test: ## Run unit tests with pytest and collect coverage
+	$(PYTHON_INTERPRETER) -m pytest \
+	  --rootdir=. \
+	  --cov=src \
+	  --cov-report=xml:tests/coverage.xml \
+	  --cov-report=term
 
 run: ## Run the Prefect pipeline (python -m src.run)
 	$(PYTHON_INTERPRETER) -m src.run

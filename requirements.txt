@@ -5,6 +5,7 @@ notebook
 numpy
 pandas
 pytest
+pytest-cov
 python-dotenv
 scikit-learn
 ruff
