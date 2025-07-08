@@ -21,7 +21,7 @@ clean: ## Delete compiled Python files & caches
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete
 	rm -rf .pytest_cache .ruff_cache
-	rm -f .coverage tests/.coverage tests/coverage.xml
+	rm -f .coverage .coverage tests/coverage.xml
 
 lint: ## Lint using ruff
 	ruff check . --fix

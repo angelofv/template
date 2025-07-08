@@ -1,6 +1,4 @@
 [run]
-data_file = tests/.coverage
-
 omit =
   src/config.py
   src/utils.py
