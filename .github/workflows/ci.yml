@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build-and-smoke-test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -49,9 +49,9 @@ jobs:
           fail_ci_if_error: true
           verbose: true
 
-      - name: Smoke-test Docker Compose via Makefile
+      - name: Smoke-test Docker Compose
         run: |
-          # 1) Start mlflow, prefect and app services
+          # 1) Start mlflow, prefect and app
           MAKE_OPTS="" make up &
 
           # 2) Fetch the container ID for the `app` service
