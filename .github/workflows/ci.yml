@@ -47,5 +47,24 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: tests/coverage.xml
           fail_ci_if_error: true
-          verbose: true 
+          verbose: true
 
+      - name: Smoke-test Docker Compose via Makefile
+        run: |
+          # 1) Start mlflow, prefect and app services
+          MAKE_OPTS="" make up &
+
+          # 2) Fetch the container ID for the `app` service
+          APP_ID=$(docker compose ps -q app)
+          if [ -z "$APP_ID" ]; then
+            echo "❌ Could not find the 'app' container"
+            make down
+            exit 1
+          fi
+
+          # 3) Wait for the container to exit (non-zero exit code fails the step)
+          echo "⏳ Waiting for the app container ($APP_ID) to finish..."
+          docker wait "$APP_ID"
+
+          # 4) Teardown
+          make down
