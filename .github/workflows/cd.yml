@@ -65,7 +65,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: image
-          image-ref: ${{ env.REGISTRY_IMAGE }}:${{ github.sha }}
+          image-ref: ghcr.io/${{ github.repository }}:${{ github.sha }}
           severity: CRITICAL,HIGH
           ignore-unfixed: true
 
@@ -74,6 +74,7 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.REGISTRY_IMAGE }}:${{ github.sha }}
+      image: ghcr.io/${{ github.repository }}:${{ github.sha }}
     steps:
-      - run: python -m src.run --help || true
+      - name: Pipeline smoke test
+        run: python -m src.run --help || true
