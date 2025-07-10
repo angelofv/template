@@ -41,7 +41,7 @@ clean: ## Remove Python artifacts & caches
 mlflow-clean: ## Delete local mlruns directory
 	rm -rf $(MLFLOW_URI)
 
-lint: ## Lint code with ruff (auto-fix)
+lint: ## Lint code with ruff
 	ruff check . --fix
 
 format: ## Format code with ruff
