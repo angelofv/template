@@ -4,6 +4,7 @@ on:
   workflow_run:
     workflows: ["CI"]
     types: [completed]
+  workflow_dispatch:
 
 concurrency:
   group: cd-${{ github.ref }}
@@ -26,7 +27,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build & push
+      - name: Build & push image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -34,26 +35,35 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.sha }}
             ghcr.io/${{ github.repository }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: |
+            type=gha,scope=global
+            type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
+          cache-to: |
+            type=registry,ref=ghcr.io/${{ github.repository }}:buildcache,mode=max,scope=global
+            type=gha,scope=global,mode=max
 
   security-scan:
     needs: build-push
-    runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
     steps:
-      - name: Scan with Trivy
-        uses: aquasecurity/trivy-action@v0.17.0
+      - name: Setup Trivy
+        uses: aquasecurity/setup-trivy@v0.2.3
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@v0.32.0
         with:
+          scan-type: image
           image-ref: ghcr.io/${{ github.repository }}:${{ github.sha }}
           ignore-unfixed: true
           severity: CRITICAL,HIGH
+          skip-setup-trivy: true
 
   smoke-test:
     needs: build-push
-    runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/${{ github.repository }}:${{ github.sha }}
     steps:
-      - run: python -m src.run --help || true
+      - name: Pipeline smoke test
+        run: python -m src.run --help || true
