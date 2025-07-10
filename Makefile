@@ -84,7 +84,7 @@ local-infra: ## Start MLflow & Prefect locally
 	printf "\n👉 MLflow UI:   http://localhost:$(MLFLOW_PORT)\n"; \
 	printf "👉 Prefect UI:  http://localhost:$(PREFECT_PORT)\n\n"
 
-local-pipeline: ## Run the ML pipeline locally (after local-infra)
+local-pipeline: ## Run pipeline locally (after local-infra)
 	@echo "▶️  Launching pipeline …"
 	@MLFLOW_TRACKING_URI=http://localhost:$(MLFLOW_PORT) \
 	  PREFECT_API_URL=http://localhost:$(PREFECT_PORT)/api \
@@ -132,7 +132,7 @@ infra: ## Start MLflow & Prefect via Docker
 	@printf "\n👉 MLflow UI: http://localhost:$(MLFLOW_PORT)\n"
 	@printf "👉 Prefect UI: http://localhost:$(PREFECT_PORT)\n\n"
 
-pipeline: ## Build & run pipeline via Docker (after infra)
+pipeline: ## Run pipeline via Docker (after infra)
 	@echo "▶️  Launching pipeline (Docker)…"
 	@$(COMPOSE) up -d --build --no-deps pipeline
 	@$(COMPOSE) logs -f pipeline \
