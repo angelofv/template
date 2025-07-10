@@ -37,7 +37,6 @@ WORKDIR /opt/app
 
 # 7. Variables d’environnement
 ENV PYTHONUNBUFFERED=1 \
-    MLFLOW_TRACKING_URI=http://mlflow:5000 \
     GIT_PYTHON_REFRESH=quiet \
     GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git
 
