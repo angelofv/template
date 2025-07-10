@@ -1,4 +1,5 @@
 import os
+import pickle
 
 import mlflow
 
@@ -18,3 +19,13 @@ def init_mlflow(
 
     mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment(experiment_name)
+
+
+def load_model_from_file(filepath: str):
+    """
+    Charge un modèle sklearn enregistré en pickle.
+    """
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(f"Modèle introuvable à {filepath}")
+    with open(filepath, "rb") as f:
+        return pickle.load(f)

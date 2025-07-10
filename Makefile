@@ -2,34 +2,52 @@
 # GLOBALS                                                                       #
 #################################################################################
 
-PROJECT_NAME   = template
-PYTHON_VERSION = 3.10
-PYTHON_INTERPRETER = python
+PROJECT_NAME        = template
+PYTHON_VERSION      = 3.10
+PYTHON_INTERPRETER  = python
+
+# MLflow & Prefect settings
+MLFLOW_URI          ?= ./mlruns
+MLFLOW_PORT         ?= 5000
+PREFECT_PORT        ?= 4200
+
+# API & Frontend settings
+API_PORT            ?= 8000
+APP_PORT            ?= 8501
+MODEL_PATH          ?= ./data/03_models/model.pkl
 
 #################################################################################
-# COMMANDS                                                                      #
+# ENVIRONMENT & DEPENDENCIES                                                    #
 #################################################################################
 
-.PHONY: requirements clean lint format test run create_environment \
-        pipeline prefect-ui prefect-stop mlflow-ui mlflow-clean help
+.PHONY: create_environment requirements clean lint format test help
 
-requirements: ## Install Python dependencies
-	$(PYTHON_INTERPRETER) -m pip install -U pip
+create_environment: ## Create a Conda env named $(PROJECT_NAME)
+	conda create --name $(PROJECT_NAME) python=$(PYTHON_VERSION) -y
+	@echo ">>> Environment created. Activate with: conda activate $(PROJECT_NAME)"
+
+requirements: ## Install Python dependencies into active env (incl. API & app)
+	$(PYTHON_INTERPRETER) -m pip install --upgrade pip
 	$(PYTHON_INTERPRETER) -m pip install -r requirements.txt
+	$(PYTHON_INTERPRETER) -m pip install -r services/api/requirements.txt
+	$(PYTHON_INTERPRETER) -m pip install -r services/app/requirements.txt
 
-clean: ## Delete compiled Python files & caches
+clean: ## Remove Python artifacts & caches
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete
 	rm -rf .pytest_cache .ruff_cache
-	rm -f .coverage .coverage tests/coverage.xml
+	rm -f .coverage tests/coverage.xml
 
-lint: ## Lint using ruff
+mlflow-clean: ## Delete local mlruns directory
+	rm -rf $(MLFLOW_URI)
+
+lint: ## Lint code with ruff (auto-fix)
 	ruff check . --fix
 
-format: ## Auto‑format code with ruff
+format: ## Format code with ruff
 	ruff format . && ruff check --fix .
 
-test: ## Run unit tests with pytest and collect coverage
+test: ## Run pytest with coverage
 	$(PYTHON_INTERPRETER) -m pytest \
 	  --rootdir=. \
 	  --cov=src \
@@ -37,60 +55,105 @@ test: ## Run unit tests with pytest and collect coverage
 	  --cov-report=xml:tests/coverage.xml \
 	  --cov-report=term
 
-run: ## Run the Prefect pipeline (python -m src.run)
-	$(PYTHON_INTERPRETER) -m src.run
-
-create_environment: ## Create a Conda env $(PROJECT_NAME)
-	conda create --name $(PROJECT_NAME) python=$(PYTHON_VERSION) -y
-	@echo ">>> conda env created. Activate with:\nconda activate $(PROJECT_NAME)"
-
 #################################################################################
-# PREFECT / MLFLOW                                                              #
+# LOCAL (NO DOCKER)                                                             #
 #################################################################################
 
-MLFLOW_URI  ?= ./mlruns     # MLflow backend dir
-MLFLOW_PORT ?= 5000              # MLflow UI port
-SERVER_PORT ?= 4200              # Prefect server port
+.PHONY: local-infra local-pipeline local-serve local-down
 
-prefect-ui: ## Start Prefect server + UI
-	prefect server start --host 127.0.0.1 --port $(SERVER_PORT)
+local-infra: ## ▶️  Start MLflow & Prefect locally
+	@echo "▶️  Launching MLflow server..."; \
+	$(PYTHON_INTERPRETER) -m mlflow server \
+	  --backend-store-uri $(MLFLOW_URI) \
+	  --artifacts-destination $(MLFLOW_URI) \
+	  --serve-artifacts \
+	  --host 0.0.0.0 \
+	  --port $(MLFLOW_PORT) & \
+	printf "   Waiting for MLflow"; \
+	until curl -s http://localhost:$(MLFLOW_PORT)/ >/dev/null 2>&1; do printf "."; sleep 1; done; \
+	echo " ✔ MLflow is up"; \
+	\
+	echo "▶️  Launching Prefect server..."; \
+	prefect server start \
+	  --host 0.0.0.0 \
+	  --port $(PREFECT_PORT) & \
+	printf "   Waiting for Prefect"; \
+	until curl -s http://localhost:$(PREFECT_PORT)/api/health >/dev/null 2>&1; do printf "."; sleep 1; done; \
+	echo " ✔ Prefect is up"; \
+	\
+	printf "\n👉 MLflow UI:   http://localhost:$(MLFLOW_PORT)\n"; \
+	printf "👉 Prefect UI:  http://localhost:$(PREFECT_PORT)\n\n"
 
-prefect-stop: ## Stop Prefect server (Unix/macOS)
-	-pkill -f "prefect server start" || true
+local-pipeline: ## Run the ML pipeline locally (after local-infra)
+	@echo "▶️  Launching pipeline …"
+	@MLFLOW_TRACKING_URI=http://localhost:$(MLFLOW_PORT) \
+	  PREFECT_API_URL=http://localhost:$(PREFECT_PORT)/api \
+	  $(PYTHON_INTERPRETER) -m src.run
 
-mlflow-ui: ## Launch MLflow UI
-	mlflow ui --backend-store-uri $(MLFLOW_URI) \
-	          --host 127.0.0.1 --port $(MLFLOW_PORT)
+local-serve: ## Start API & Streamlit locally
+	@echo "🚀  Starting API..." ; \
+	MODEL_PATH=$(MODEL_PATH) $(PYTHON_INTERPRETER) -m uvicorn services.api.main:app \
+	  --host 0.0.0.0 --port $(API_PORT) & \
+	echo -n "   Waiting for API" ; \
+	until curl -s http://localhost:$(API_PORT)/health >/dev/null 2>&1; do echo -n "."; sleep 1; done ; \
+	echo " ✔ API is up" ; \
+	echo "🚀  Starting Streamlit..." ; \
+	streamlit run services/app/app.py \
+	  --server.address=0.0.0.0 --server.port=$(APP_PORT) & \
+	echo -n "   Waiting for Streamlit" ; \
+	until curl -s http://localhost:$(APP_PORT)/ >/dev/null 2>&1; do echo -n "."; sleep 1; done ; \
+	echo " ✔ Streamlit is up" ; \
+	printf "\n👉 API:        http://localhost:$(API_PORT)\n" ; \
+	printf "👉 Streamlit:  http://localhost:$(APP_PORT)\n\n" ; \
+	wait
 
-mlflow-clean: ## Delete local mlruns directory
-	rm -rf $(MLFLOW_URI)
+local-down: ## Stop all local services by port
+	@echo "🛑  Killing processes on ports $(MLFLOW_PORT), $(PREFECT_PORT), $(API_PORT), $(APP_PORT)…"
+	-@lsof -ti tcp:$(MLFLOW_PORT)   | xargs -r kill
+	-@lsof -ti tcp:$(PREFECT_PORT)  | xargs -r kill
+	-@lsof -ti tcp:$(API_PORT)      | xargs -r kill
+	-@lsof -ti tcp:$(APP_PORT)      | xargs -r kill
 
-# Docker
+#################################################################################
+# DOCKER                                                                        #
+#################################################################################
+
 COMPOSE := docker compose
 
-.PHONY: up down
+.PHONY: infra pipeline serve down
 
-up: ## up: start mlflow & prefect in the background, tail their logs, then launch the app
+infra: ## Start MLflow & Prefect via Docker
 	@$(COMPOSE) up -d mlflow prefect
-	@printf "⏳ Waiting for Prefect API to become available "
-	@until curl -s http://localhost:4200/api/health >/dev/null 2>&1; do \
+	@printf "⏳ Waiting for Prefect API… "
+	@until curl -s http://localhost:$(PREFECT_PORT)/api/health >/dev/null; do \
 	  printf "."; sleep 1; \
 	done
-	@echo " ✔ Prefect is ready!"
-	@$(COMPOSE) up -d --build --no-deps app
-	@$(COMPOSE) logs -f mlflow prefect app \
+	@echo " ✔ Ready!"
+	@printf "\n👉 MLflow UI: http://localhost:$(MLFLOW_PORT)\n"
+	@printf "👉 Prefect UI: http://localhost:$(PREFECT_PORT)\n\n"
+
+pipeline: ## Build & run pipeline via Docker (after infra)
+	@echo "▶️  Launching pipeline (Docker)…"
+	@$(COMPOSE) up -d --build --no-deps pipeline
+	@$(COMPOSE) logs -f pipeline \
 	  | sed 's/host\.docker\.internal/localhost/g'
-	  
-down: ## down: stop and remove all services and volumes
-	@echo "→ Stopping all services and cleaning up…"
-	$(COMPOSE) down -v
+
+serve: ## Start API & Streamlit via Docker (after pipeline)
+	@echo "🚀  Starting API & Streamlit (Docker)…"
+	@$(COMPOSE) up -d --build api app
+	@printf "\n👉 API: http://localhost:$(API_PORT)\n"
+	@printf "👉 Streamlit: http://localhost:$(APP_PORT)\n\n"
+
+down: ## Stop & remove all Docker services & volumes
+	@echo "→ Stopping and cleaning up Docker services…"
+	@$(COMPOSE) down -v
 
 #################################################################################
-# Self‑documenting help                                                         #
+# HELP                                                                           #
 #################################################################################
 
 .DEFAULT_GOAL := help
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?##' $(MAKEFILE_LIST) | \
-	  awk -F':|##' '{printf "%-18s %s\n", $$1, $$NF}'
+	  awk -F':|##' '{printf "%-20s %s\n", $$1, $$NF}'
