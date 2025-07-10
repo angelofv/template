@@ -61,7 +61,7 @@ test: ## Run pytest with coverage
 
 .PHONY: local-infra local-pipeline local-serve local-down
 
-local-infra: ## ▶️  Start MLflow & Prefect locally
+local-infra: ## Start MLflow & Prefect locally
 	@echo "▶️  Launching MLflow server..."; \
 	$(PYTHON_INTERPRETER) -m mlflow server \
 	  --backend-store-uri $(MLFLOW_URI) \
