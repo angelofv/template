@@ -76,7 +76,10 @@ jobs:
     container:
       image: ghcr.io/${{ github.repository }}:${{ github.sha }}
     steps:
-      - name: Pipeline smoke test
+      - name: Pipeline smoke test - import only
         run: |
-          export PREFECT_HOME=/tmp
-          python -m src.run --help || true
+          python - << 'EOF'
+          import src
+          import src.run
+          print("🎉 smoke test passed – modules import correctly")
+          EOF
