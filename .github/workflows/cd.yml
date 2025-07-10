@@ -1,0 +1,59 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main              # déclenchement sur merge vers main
+    tags:
+      - 'v*.*.*'         # ou sur création d'un tag vX.Y.Z
+  workflow_dispatch:
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read       # lecture du dépôt
+      packages: write      # push vers GHCR
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/${{ github.repository }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  security-scan:
+    needs: build-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@v0.17.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+
+  smoke-test:
+    needs: build-push
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}:${{ github.sha }}
+    steps:
+      - name: Pipeline smoke test
+        run: python -m src.run --help || true

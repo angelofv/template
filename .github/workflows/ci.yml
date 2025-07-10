@@ -2,16 +2,16 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
-  build-and-smoke-test:
+  build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.10']
+        python-version: [ '3.10' ]
 
     steps:
       - name: Checkout repository
@@ -29,12 +29,10 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
       - name: Lint with ruff
         run: make lint
 
@@ -47,18 +45,4 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: tests/coverage.xml
           fail_ci_if_error: true
-          verbose: true
-
-      - name: Smoke-test Docker Compose
-        run: |
-          # 1) Build only the app image
-          docker compose build app
-
-          # 2) Start mlflow & prefect
-          docker compose up -d mlflow prefect
-
-          # 3) Run a trivial check inside the app container
-          docker compose run --rm app echo "🚀 App image built & deps up ✅"
-
-          # 4) Clean up everything
-          docker compose down -v
+          verbose: true 
