@@ -77,4 +77,6 @@ jobs:
       image: ghcr.io/${{ github.repository }}:${{ github.sha }}
     steps:
       - name: Pipeline smoke test
-        run: python -m src.run --help || true
+        run: |
+          export PREFECT_HOME=/tmp
+          python -m src.run --help || true
