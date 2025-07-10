@@ -35,8 +35,8 @@ services:
     volumes:
       - prefect_home:/home/app/.prefect
 
-  # ─────────────── Application (one-shot) ───────────────
-  app:
+  # ─────────────── ML Pipeline ───────────────
+  pipeline:
     build: .
     depends_on:
       mlflow:
@@ -60,6 +60,28 @@ services:
       RICH_FORCE_TERMINAL:    "1"
       TERM:                   xterm-256color
       FORCE_COLOR:            "1"
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mlflow
+    environment:
+      MODEL_PATH: /app/data/03_models/model.pkl
+    volumes:
+      - ./data/03_models:/app/data/03_models:ro
+  app:
+    build:
+      context: .
+      dockerfile: services/app/Dockerfile
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+    environment:
+      API_URL: http://api:8000
 
 volumes:
   mlflow_runs:
