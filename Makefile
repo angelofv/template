@@ -90,7 +90,7 @@ local-pipeline: ## Run the ML pipeline locally (after local-infra)
 	  PREFECT_API_URL=http://localhost:$(PREFECT_PORT)/api \
 	  $(PYTHON_INTERPRETER) -m src.run
 
-local-serve: ## Start API & Streamlit locally
+local-serve: ## Start API & Streamlit locally (after local-pipeline)
 	@echo "🚀  Starting API..." ; \
 	MODEL_PATH=$(MODEL_PATH) $(PYTHON_INTERPRETER) -m uvicorn services.api.main:app \
 	  --host 0.0.0.0 --port $(API_PORT) & \
