@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # ---------- runtime stage ----------
 FROM python:3.10-slim
 
-# 5. Installer Git pour runtime (silence GitPython warning)
+# 5. Installer Git pour runtime (pour GitPython)
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && \
     apt-get install -y --no-install-recommends git && \
@@ -32,6 +32,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
 
 # 6. Créer un utilisateur non-root
 RUN useradd -m -u 1000 app
+
 WORKDIR /opt/app
 
 # 7. Variables d’environnement
@@ -46,8 +47,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir /tmp/wheels/* && \
     rm -rf /tmp/wheels
 
-# 9. Copier le reste du projet
+# 9. Copier le reste du projet et réinstaller en mode editable
 COPY --chown=app:app . .
+RUN pip install --no-deps -e .
 
 # 10. Passer à l’utilisateur non-root
 USER app
