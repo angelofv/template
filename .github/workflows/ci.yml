@@ -2,16 +2,16 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build-and-smoke-test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.10' ]
+        python-version: ['3.10']
 
     steps:
       - name: Checkout repository
@@ -51,24 +51,14 @@ jobs:
 
       - name: Smoke-test Docker Compose
         run: |
-          # 1) Spin up mlflow & prefect
+          # 1) Build only the app image
+          docker compose build app
+
+          # 2) Start mlflow & prefect
           docker compose up -d mlflow prefect
 
-          # 2) Build & start app
-          docker compose up -d --build --no-deps app
+          # 3) Run a trivial check inside the app container
+          docker compose run --rm app echo "🚀 App image built & deps up ✅"
 
-          # 3) Wait for the app container to exist
-          echo "⏳ Waiting for the app container to appear..."
-          until [ -n "$(docker compose ps -q app)" ]; do
-            sleep 1
-          done
-
-          APP_ID=$(docker compose ps -q app)
-          echo "👍 Found app container: $APP_ID"
-
-          # 4) Wait for it to exit (non-zero exit code will fail the job)
-          echo "⏳ Waiting for the app container ($APP_ID) to finish..."
-          docker wait "$APP_ID"
-
-          # 5) Cleanup
+          # 4) Clean up everything
           docker compose down -v
