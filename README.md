@@ -35,18 +35,9 @@
 * **Python 3.10+**
 * **Docker Desktop**
 * (optional) **Conda** ≥ 4.10
+* **Codecov** – create a free account at [Codecov](https://codecov.io/), enable your repository there, then add the resulting `CODECOV_TOKEN` as a secret in your GitHub repository settings.
 
-### 1. Clone / template‑create
-
-```bash
-# GitHub template – keeps history
-gh repo create my‑ml‑project --template angelofv/template --public
-# or classic clone
-# git clone https://github.com/angelofv/template.git my‑ml‑project
-cd my‑ml‑project
-```
-
-### 2. Option A – Native (no Docker)
+### 1. Option A – Native (no Docker)
 
 ```bash
 make create_environment   # conda env ‘template’ (1×)
@@ -60,7 +51,7 @@ make local-serve          # spin up API (8000) + Streamlit (8501)
 make local-down           # stop all local services
 ```
 
-### 2. Option B – Docker‑first
+### 1. Option B – Docker‑first
 
 ```bash
 make infra     # pull & spin up MLflow (5000) + Prefect (4200)
@@ -190,10 +181,3 @@ All tasks read their configuration from **environment variables** first, then fa
 
 Released under the **MIT License**. See [`LICENSE`](LICENSE) for full text.
 
----
-
-## 🙏 Thanks
-
-Inspired by the awesome work of the **Prefect**, **Kedro** and **MLflow** communities – and the countless open‑source authors who make MLOps fun.
-
-Made with ❤️ in Paris.
