@@ -2,7 +2,7 @@
 # GLOBALS                                                                       #
 #################################################################################
 
-ENV_NAME        = template
+ENV_NAME        	= template
 PYTHON_VERSION      = 3.10
 PYTHON_INTERPRETER  = python
 
