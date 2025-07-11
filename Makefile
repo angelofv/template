@@ -2,7 +2,7 @@
 # GLOBALS                                                                       #
 #################################################################################
 
-PROJECT_NAME        = template
+ENV_NAME        = template
 PYTHON_VERSION      = 3.10
 PYTHON_INTERPRETER  = python
 
@@ -22,9 +22,9 @@ MODEL_PATH          ?= ./data/03_models/model.pkl
 
 .PHONY: create_environment requirements clean lint format test help
 
-create_environment: ## Create a Conda env named $(PROJECT_NAME)
-	conda create --name $(PROJECT_NAME) python=$(PYTHON_VERSION) -y
-	@echo ">>> Environment created. Activate with: conda activate $(PROJECT_NAME)"
+create_environment: ## Create a Conda env named $(ENV_NAME)
+	conda create --name $(ENV_NAME) python=$(PYTHON_VERSION) -y
+	@echo ">>> Environment created. Activate with: conda activate $(ENV_NAME)"
 
 requirements: ## Install Python dependencies into active env (incl. API & app)
 	$(PYTHON_INTERPRETER) -m pip install --upgrade pip
