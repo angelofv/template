@@ -53,7 +53,7 @@ make create_environment   # conda env ‘template’ (1×)
 conda activate template
 make requirements         # pip install (1×)
 
-make local-infra          # MLflow + Prefect UIs
+make local-infra          # spin up MLflow (5000) + Prefect (4200)
 make local-pipeline       # run full flow
 make local-serve          # spin up API (8000) + Streamlit (8501)
 # … hack, commit, profit! …
@@ -63,9 +63,9 @@ make local-down           # stop all local services
 ### 2. Option B – Docker‑first
 
 ```bash
-make infra     # pull MLflow + Prefect containers
-make pipeline  # build pipeline image & run flow
-make serve     # build API + Streamlit images
+make infra     # pull & spin up MLflow (5000) + Prefect (4200)
+make pipeline  # build pipeline image & run full flow
+make serve     # build & spin up API (8000) + Streamlit app (8501)
 
 # same ports as native; tear‑down:
 make down
@@ -77,16 +77,17 @@ make down
 
 ## 🛠️ Every‑day commands
 
-| Command                                | Purpose                          |
-| -------------------------------------- | -------------------------------- |
-| `make format`                          | Ruff‑format the entire code‑base |
-| `make lint`                            | Ruff static analysis             |
-| `make test`                            | pytest + coverage XML (Codecov)  |
-| `make clean`                           | remove Python artefacts & caches |
-| `make mlflow-clean`                    | wipe local `mlruns/` folder      |
-| `make infra / pipeline / serve / down` | Docker workflow helpers          |
-
+| Command                                                        | Purpose                          |
+| --------------------------------------                         | -------------------------------- |
+| `make format`                                                  | Ruff‑format the entire code‑base |
+| `make lint`                                                    | Ruff static analysis             |
+| `make test`                                                    | pytest + coverage XML (Codecov)  |
+| `make clean`                                                   | remove Python artefacts & caches |
+| `make mlflow-clean`                                            | wipe local `mlruns/` folder      |
+| `make infra / pipeline / serve / down`                         | Docker workflow helpers          |
+| `make local-infra / local-pipeline / local-serve / local-down` | Local workflow helpers           |
 ---
+> **Tip:** run `make help` to see *all* available targets and their descriptions.
 
 ## 🧪 Running tests locally
 
