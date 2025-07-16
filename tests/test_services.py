@@ -3,7 +3,7 @@ import subprocess
 import time
 
 from fastapi.testclient import TestClient
-from template.services.api.api import app
+from services.api import app
 
 client = TestClient(app)
 
@@ -15,7 +15,7 @@ def test_health_endpoint():
 
 
 def test_streamlit_app_starts():
-    script = pathlib.Path(__file__).parent.parent / "services" / "app" / "app.py"
+    script = pathlib.Path(__file__).parent.parent / "services" / "app.py"
     proc = subprocess.Popen(
         [
             "streamlit", "run", str(script),

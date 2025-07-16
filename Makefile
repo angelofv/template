@@ -134,8 +134,7 @@ pipeline: ## Run pipeline via Docker (after infra)
 	@echo "▶️  Launching pipeline (Docker)…"
 	@$(COMPOSE) build --pull pipeline
 	@$(COMPOSE) up -d --no-deps pipeline
-	@$(COMPOSE) logs -f pipeline \
-	  | sed 's/host\.docker\.internal/localhost/g'
+	@$(COMPOSE) logs -f --tail=0 pipeline | sed 's/host\.docker\.internal/localhost/g'
 
 serve: ## Start API & Streamlit via Docker (after pipeline)
 	@echo "🚀  Starting API & Streamlit (Docker)…"

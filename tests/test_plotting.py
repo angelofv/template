@@ -1,4 +1,4 @@
-from src.plotting import plot_metrics
+from src import plot_metrics
 
 
 def test_plot_metrics_task_is_callable() -> None:
