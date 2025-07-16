@@ -138,7 +138,7 @@ pipeline: ## Run pipeline via Docker (after infra)
 
 serve: ## Start API & Streamlit via Docker (after pipeline)
 	@echo "🚀  Starting API & Streamlit (Docker)…"
-	@$(COMPOSE) build --parallel api app
+	@$(COMPOSE) build api app
 	@$(COMPOSE) up -d api app
 	@printf "\n👉 API: http://localhost:$(API_PORT)\n"
 	@printf "👉 Streamlit: http://localhost:$(APP_PORT)\n\n"
