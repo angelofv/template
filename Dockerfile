@@ -91,4 +91,3 @@ COPY --chown=appuser:appuser services/app.py ./app.py
 USER appuser
 
 ENTRYPOINT ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=8501"]
-

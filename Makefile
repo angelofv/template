@@ -157,4 +157,3 @@ down: ## Stop & remove all Docker services & volumes
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?##' $(MAKEFILE_LIST) | \
 	  awk -F':|##' '{printf "%-20s %s\n", $$1, $$NF}'
-
