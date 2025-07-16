@@ -70,7 +70,7 @@ services:
     depends_on:
       - mlflow
     volumes:
-      - ./data/03_models:/opt/app/data/03_models:ro
+      - ./data/03_models:/app/data/03_models:ro
       - ~/.cache/pip:/root/.cache/pip:rw
     environment:
       MODEL_PATH: /app/data/03_models/model.pkl
