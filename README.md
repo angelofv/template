@@ -4,180 +4,187 @@
 [![CD](https://github.com/angelofv/template/actions/workflows/cd.yml/badge.svg)](https://github.com/angelofv/template/actions/workflows/cd.yml)
 [![codecov](https://codecov.io/gh/angelofv/template/graph/badge.svg?token=RD0GRZMER0)](https://codecov.io/gh/angelofv/template)
 
-> **A ready-to-use template for building, tracking and deploying your machine-learning side-projects.**
+> **A ready‑to‑use scaffold for building, tracking and deploying small machine‑learning projects.**
 >
-> Mix & match **Prefect 3** flows, **MLflow** tracking, **Kedro** data‑catalogs, **FastAPI** micro‑services, **Streamlit** demos, all shipped in reproducible **Docker** images and guarded by GitHub Actions **CI ↔ CD**.
+> Mix & match **Prefect 3** flows, **MLflow** tracking, **Kedro** data‑catalogs, **FastAPI** micro‑services and **Streamlit** demos – all shipped in reproducible **Docker** images and guarded by GitHub Actions **CI ↔ CD**.
 
 ---
 
 ## ✨ Highlights
 
-|  Capability            |  What’s inside                  |  Why care?                                                   |
-| ---------------------- | ------------------------------- | ------------------------------------------------------------ |
-| Orchestration          | Prefect 3 `@flow` tasks         | Dependency graph, logs, retries & scheduling with zero infra |
-| Experiment tracking    | MLflow file‑store (local)       | Tracking experiments, UI at `:5000`                          |
-| Data management        | Kedro `DataCatalog`             | Declarative dataset layer (CSV, Parquet, Pickle…)            |
-| Serving                | FastAPI (+ uvicorn) & Streamlit | From REST inference to interactive demo                      |
-| Dev ergonomics         | Makefile, Ruff, Conda, Docker   | One‑liners & consistent environments                         |
-| Quality gates          | pytest‑cov, Ruff, Codecov badge | Keep tech debt under control                                 |
-| CI / CD                | GH Actions 🔁 GHCR + Trivy      | Push‑to‑image pipeline with security scan                    |
+| Capability       | What’s inside                   | Why care?                                                            |
+| ---------------- | ------------------------------- | -------------------------------------------------------------------- |
+| Orchestration    | Prefect 3 `@flow` tasks         | Dependency graph, logs, retries & scheduling **without extra infra** |
+| Experiment track | MLflow file‑store (local)       | Compare runs; rich UI exposed at port `5000`                         |
+| Data layer       | Kedro `DataCatalog`             | Declarative datasets (CSV, Parquet, Pickle …)                        |
+| Serving          | FastAPI (+ uvicorn) & Streamlit | From REST inference to an interactive playground                     |
+| Dev ergonomics   | Makefile, Ruff, Conda, Docker   | One‑liners & consistent environments                                 |
+| Quality gates    | pytest‑cov, Ruff, Codecov badge | Keep tech‑debt under control                                         |
+| CI / CD          | GH Actions ⇆ GHCR + Trivy       | Push‑to‑image pipeline with security scans                           |
 
 ---
-> **Heads-up 🖼️**
-> The Streamlit dashboard is a template.  
-> Personalise it by editing `services/app/app.py` **or** by exporting environment
-> variables such as `PROFILE_NAME`, `PROFILE_DESC`, `PROFILE_AVATAR`, `LINK_GITHUB`, etc.
 
-## ⚡ Quick start
+> **Heads‑up 🖼️**
+> The Streamlit dashboard is only a starting point.
+> Make it yours by editing `services/app.py` **or** by exporting environment variables such as `PROFILE_NAME`, `PROFILE_DESC`, `PROFILE_AVATAR`, `LINK_GITHUB`, etc.
+
+---
+
+## ⚡ Quick start
 
 ### 0. Prerequisites
 
 * **Python 3.10+**
-* **Docker Desktop**
-* (optional) **Conda** ≥ 4.10
-* **Codecov** – create a free account at [Codecov](https://codecov.io/), enable your repository there, then add the resulting `CODECOV_TOKEN` as a secret in your GitHub repository settings.
+* **Docker Desktop** (or Podman/Colima)
+* (optional) **Conda** ≥ 4.10
+* **Codecov** – create a free account, enable your repo and add `CODECOV_TOKEN` as a secret in **Settings → Secrets → Actions**.
 
-### 1. Option A – Native (no Docker)
+### 1‑A. Native workflow (no Docker)
 
 ```bash
-make create_environment   # conda env ‘template’ (1×)
+make create_env          # conda env ‘template’ (one‑shot)
 conda activate template
-make requirements         # pip install (1×)
+make requirements        # pip install
 
-make local-infra          # spin up MLflow (5000) + Prefect (4200)
-make local-pipeline       # run full flow
-make local-serve          # spin up API (8000) + Streamlit (8501)
+make local-infra         # spin‑up MLflow :5000 + Prefect :4200
+make local-pipeline      # run full flow
+make local-serve         # start API :8000 + Streamlit :8501
 # … hack, commit, profit! …
-make local-down           # stop all local services
+make local-down          # stop all local services
 ```
 
-### 1. Option B – Docker‑first
+### 1‑B. Docker‑first workflow
 
 ```bash
-make infra     # pull & spin up MLflow (5000) + Prefect (4200)
-make pipeline  # build pipeline image & run full flow
-make serve     # build & spin up API (8000) + Streamlit app (8501)
+make infra      # spin‑up MLflow + Prefect in containers
+make pipeline   # build pipeline image & run full flow
+make serve      # build & start API + Streamlit
 
-# same ports as native; tear‑down:
+# Tear‑down
 make down
 ```
 
-> **TL;DR** – `docker compose up --build` launches *everything* at once (but loses the nice logs & coloured prompts our Makefile gives 🙃).
+<details>
+<summary>TL;DR</summary>
+
+```bash
+docker compose up --build
+```
+
+`docker compose` will launch everything, but you will lose the pretty, colour‑coded logs provided by the Makefile 🙃.
+
+</details>
 
 ---
 
 ## 🛠️ Every‑day commands
 
-| Command                                                        | Purpose                          |
-| --------------------------------------                         | -------------------------------- |
-| `make format`                                                  | Ruff‑format the entire code‑base |
-| `make lint`                                                    | Ruff static analysis             |
-| `make test`                                                    | pytest + coverage XML (Codecov)  |
-| `make clean`                                                   | remove Python artefacts & caches |
-| `make mlflow-clean`                                            | wipe local `mlruns/` folder      |
-| `make infra / pipeline / serve / down`                         | Docker workflow helpers          |
-| `make local-infra / local-pipeline / local-serve / local-down` | Local workflow helpers           |
+| Command                                                        | Purpose                                   |
+| -------------------------------------------------------------- | ----------------------------------------- |
+| `make format`                                                  | Auto‑format the whole code‑base with Ruff |
+| `make lint`                                                    | Static analysis                           |
+| `make test`                                                    | pytest + coverage                         |
+| `make clean`                                                   | Remove Python artefacts & caches          |
+| `make mlflow-clean`                                            | Wipe local `mlruns/` folder               |
+| `make infra / pipeline / serve / down`                         | **Docker** helpers                        |
+| `make local-infra / local-pipeline / local-serve / local-down` | **Native** helpers                        |
+
+Run `make help` to see every available target and its description.
+
 ---
-> **Tip:** run `make help` to see *all* available targets and their descriptions.
 
 ## 🧪 Running tests locally
 
-The tests expect the repo root to be on **PYTHONPATH** so that `import src` and `import services` resolve. Two paths:
+Tests require the repo root on **PYTHONPATH** so that `import src` resolves.
 
-1. **Use Makefile** (recommended) – already sets the env var:
+```bash
+make test                # recommended – sets env var automatically
+```
 
-   ```bash
-   make test          # 🚦 all green
-   ```
-2. **Manual run** – export once per shell:
+If you must, run manually:
 
-   ```bash
-   export PYTHONPATH="$PWD:$PYTHONPATH"
-   pytest -q          #   <1 s
-   ```
+```bash
+export PYTHONPATH="$PWD:$PYTHONPATH"
+pytest -q
+```
 
-> Got `ModuleNotFoundError: src`? You probably ran `pytest` from a parent directory **or** forgot the `PYTHONPATH` export.
+> `ModuleNotFoundError: src`? Check the current working directory or `$PYTHONPATH`.
 
 ---
 
 ## 📦 CI / CD pipeline (GitHub Actions)
 
-* **CI workflow** `ci.yml` – on every push / PR
-  1. Set‑up Python, cache pip.
-  2. Install deps; run `make lint` & `make test`.
-  3. Upload coverage to Codecov.
-* **CD workflow** `cd.yml` – after successful CI
-  1. Build multi‑stage image; push to **GHCR** (`:latest` + SHA).
-  2. Scan with **Trivy** (fail on critical/high vulns).
-  3. Spin‑up container & import package as smoke test.
+* **ci.yml** – on every push / PR
+  1. Set‑up Python & cache pip
+  2. `make lint` & `make test`
+  3. Upload coverage to Codecov
+* **cd.yml** – after successful CI
+  1. Build multi‑stage image; push to **GHCR** (`:latest` + SHA)
+  2. Scan with **Trivy** (fail on critical/high vulns)
+  3. Run smoke test (`import src`) inside the container
 
-Badges at the top of this file reflect the latest run status.
+Badges at the top of this file always reflect the last run.
 
 ---
 
-## 🗂 Project layout
+## 🗂 Project layout
 
 ```
-├── src/            # Prefect tasks, model, plots
-│   ├── preprocessing/
-│   ├── modeling/
-│   ├── plotting/
-│   └── run.py
-├── services/       # API (FastAPI) + frontend (Streamlit)
-│   ├── api/
-│   └── app/
-├── configs/        # YAML configs + Kedro catalog
-├── data/           # 01_raw / 02_processed / 03_models / 04_reports
-├── notebooks/      # Exploratory stuff (ignored by Dockerfile)
-├── Dockerfile      # Pipeline image (multi‑stage)
+├── src/                  # Prefect flows, model, plotting
+│   ├── extract.py        # load_raw_data & preprocess tasks
+│   ├── train.py          # train_model task
+│   ├── plot_metrics.py   # plot_metrics task
+│   └── run.py            # orchestrates the flow
+├── services/             # FastAPI (api.py) & Streamlit (app.py)
+├── configs/              # config.yaml + Kedro catalog
+├── data/                 # 01_raw / 02_processed / 03_models / 04_reports
+├── notebooks/            # Exploratory notebooks (ignored by Docker)
+├── Dockerfile            # Multi‑stage build (pipeline / api / app)
 ├── docker-compose.yaml
-├── Makefile        # Dev utilities
-└── tests/          # tiny unit + smoke suite
+├── Makefile              # Dev helpers
+└── tests/                # tiny unit + smoke suite
 ```
 
 ---
 
 ## ⚙️ Configuration
 
-| File                         | Consumed by                    | Notes                     |
-| ---------------------------- | ------------------------------ | ------------------------- |
-| `configs/preprocessing.yaml` | `src.preprocessing.preprocess` | adjust cleaning steps     |
-| `configs/modeling.yaml`      | `src.modeling.train_model`     | hyper‑parameters          |
-| `configs/plotting.yaml`      | `src.plotting.plot_metrics`    | figure tuning             |
-| `configs/catalog.yaml`       | Kedro `DataCatalog`            | logical names ↔ artefacts |
+All pipeline tunables live in a single YAML file:
 
-Override any path by exporting env vars `PREPROCESSING_CONFIG`, `MODELING_CONFIG`, … (see `src/config.py`).
+| File                  | Consumed by                            | Notes               |
+| --------------------- | -------------------------------------- | ------------------- |
+| `configs/config.yaml` | every Prefect task via `load_config()` | See `src/config.py` |
+
+Override the path by exporting `CONFIG_PATH`.
+
+The Kedro **DataCatalog** is defined in `configs/catalog.yaml`.
 
 ---
 
 ## 🌐 Environment variables
 
-All tasks read their configuration from **environment variables** first, then fall back to sane defaults. (Optional) Create a `.env` file at the repo root or export them in your shell.
+Tasks read their configuration from **environment variables** first, then fall back to defaults. Create a `.env` file or export them in your shell.
 
-| Variable                                         | Default                      | Component          | Purpose                                                                                        |
-| ------------------------------------------------ | ---------------------------- | ------------------ | ---------------------------------------------------------------------------------------------- |
-| `MLFLOW_TRACKING_URI`                            | `file:./mlruns`              | pipeline, API      | Where MLflow stores runs & artefacts (set to `http://host.docker.internal:5000` inside Docker) |
-| `MLFLOW_EXPERIMENT`                              | `Default`                    | pipeline           | MLflow experiment name                                                                         |
-| `PREFECT_API_URL`                                | `http://localhost:4200/api`  | pipeline           | Connect Prefect client to a remote server (`http://localhost:4200/api`)   |
-| `PREPROCESSING_CONFIG`                           | `configs/preprocessing.yaml` | pipeline           | Custom YAML for cleaning steps                                                                 |
-| `MODELING_CONFIG`                                | `configs/modeling.yaml`      | pipeline           | Hyper‑parameters YAML                                                                          |
-| `PLOTTING_CONFIG`                                | `configs/plotting.yaml`      | pipeline           | Plot options YAML                                                                              |
-| `MODEL_PATH`                                     | `data/03_models/model.pkl`   | FastAPI, Streamlit | Location of the pickled model used for inference                                               |
-| `API_URL`                                        | `http://localhost:8000`      | Streamlit          | Endpoint for prediction requests                                                               |
-| `PROFILE_NAME`, `PROFILE_DESC`, `PROFILE_LOC`, … | –                            | Streamlit          | Sidebar personalisation (avatar, links)                                                        |
+| Variable              | Default                     | Component          | Purpose                              |
+| --------------------- | --------------------------- | ------------------ | ------------------------------------ |
+| `MLFLOW_TRACKING_URI` | `file:./mlruns`             | pipeline, API      | Where MLflow stores runs & artefacts |
+| `MLFLOW_EXPERIMENT`   | `Default`                   | pipeline           | MLflow experiment name               |
+| `PREFECT_API_URL`     | `http://localhost:4200/api` | pipeline           | Prefect REST endpoint                |
+| `MODEL_PATH`          | `data/03_models/model.pkl`  | FastAPI, Streamlit | Pickled model used for inference     |
+| `API_URL`             | `http://localhost:8000`     | Streamlit          | Endpoint for prediction requests     |
+| `PROFILE_*`, `LINK_*` | –                           | Streamlit          | Dashboard personalisation            |
 
 ---
 
 ## 🏗️ Extending
 
-1. **Swap model** – edit `train_model()`; update config.
-2. **Add task** – new `@flow` in appropriate module; wire in `src/run.py`.
-3. **Ship notebooks** – mount inside the image or add to `Dockerfile` if you really need them.
+1. **Change the model** – edit `train_model()` and add hyper‑params to `config.yaml`.
+2. **Add new tasks** – write a Prefect `@flow` function and wire it in `src/run.py`.
+3. **Ship notebooks** – mount them inside the image or copy in `Dockerfile` when needed.
 4. **Deploy** – pull `ghcr.io/<user>/template:<tag>` on any container platform.
 
 ---
 
 ## 📜 License
 
-Released under the **MIT License**. See [`LICENSE`](LICENSE) for full text.
-
+Released under the **MIT License** – see [`LICENSE`](LICENSE) for details.
