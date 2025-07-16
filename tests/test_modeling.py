@@ -1,4 +1,4 @@
-from src.modeling import train_model
+from src import train_model
 
 
 def test_train_model_task_is_callable() -> None:

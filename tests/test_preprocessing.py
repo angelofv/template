@@ -1,4 +1,4 @@
-from src.preprocessing import load_raw_data, preprocess
+from src import load_raw_data, preprocess
 
 
 def test_preprocessing_tasks_are_callable() -> None:

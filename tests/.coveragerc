@@ -3,5 +3,4 @@ omit =
   src/config.py
   src/utils.py
   src/run.py
-  src/__init__.py
   */__init__.py

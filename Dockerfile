@@ -1,7 +1,11 @@
-# ---------- build stage ----------
+# syntax=docker/dockerfile:1.4
+
+################################################################################
+# 1) Builder: compiler toutes les dépendances en wheels                        #
+################################################################################
 FROM python:3.10-slim AS builder
 
-# 1. Installer Git (nécessaire pour GitPython utilisé par MLflow)
+# Installer git (pour GitPython / MLflow)
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && \
     apt-get install -y --no-install-recommends git && \
@@ -9,53 +13,80 @@ RUN --mount=type=cache,target=/var/cache/apt \
 
 WORKDIR /opt/app
 
-# 2. Copier les métadonnées du projet nécessaires à Flit
+# Copier métadonnées du projet et code pour pip -e .
 COPY pyproject.toml requirements.txt README.md LICENSE ./
+COPY src/ ./src/
 
-# 3. Copier le code source et les configs
-COPY src/ src/
-COPY configs/ configs/
-
-# 4. Construire les wheels hors-ligne
+# Construire les wheels hors‑ligne
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip && \
     pip wheel --wheel-dir /tmp/wheels -r requirements.txt
 
-# ---------- runtime stage ----------
-FROM python:3.10-slim
+################################################################################
+# 2) Runtime de base: installer les wheels                                     #
+################################################################################
+FROM python:3.10-slim AS runtime
 
-# 5. Installer Git pour runtime (silence GitPython warning)
+# Git pour GitPython warnings
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && \
     apt-get install -y --no-install-recommends git && \
     rm -rf /var/lib/apt/lists/*
 
-# 6. Créer un utilisateur non-root
-RUN useradd -m -u 1000 app
+# Créer un user non-root
+RUN useradd -m -u 1000 appuser
 
-# 7. Variables d’environnement
 ENV PYTHONUNBUFFERED=1 \
     MLFLOW_TRACKING_URI=file:///tmp/mlruns \
     MPLCONFIGDIR=/tmp \
     GIT_PYTHON_REFRESH=quiet \
     GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git
 
-# 8. Préparer le répertoire mlruns et lui donner la propriété à app
-RUN mkdir -p /tmp/mlruns && chown app:app /tmp/mlruns
-
 WORKDIR /opt/app
 
-# 9. Installer les dépendances compilées
+# Installer les wheels générés
 COPY --from=builder /tmp/wheels /tmp/wheels
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir /tmp/wheels/* && \
     rm -rf /tmp/wheels
 
-# 10. Copier le reste du projet en tant qu’app
-COPY --chown=app:app . .
+################################################################################
+# 3) Stage “pipeline”                                                          #
+################################################################################
+FROM runtime AS pipeline
 
-# 11. Passer à l’utilisateur non-root
-USER app
+# Copier tout le projet (code, configs, notebooks ignorés par .dockerignore)
+COPY --chown=appuser:appuser . .
 
-# 12. Lancer le pipeline par défaut
+USER appuser
+
 ENTRYPOINT ["python", "-m", "src.run"]
+
+################################################################################
+# 4) Stage “api”                                                               #
+################################################################################
+FROM runtime AS api
+
+WORKDIR /opt/app
+
+# copier src et api
+COPY --chown=appuser:appuser services/api.py ./api.py
+COPY --chown=appuser:appuser src/ ./src/
+
+USER appuser
+
+ENTRYPOINT ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
+
+################################################################################
+# 5) Stage “app” (Streamlit)                                                   #
+################################################################################
+FROM runtime AS app
+
+WORKDIR /opt/app
+
+# Copier uniquement le front Streamlit
+COPY --chown=appuser:appuser services/app.py ./app.py
+
+USER appuser
+
+ENTRYPOINT ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=8501"]

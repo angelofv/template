@@ -16,4 +16,11 @@ mlflow
 griffe
 kedro
 kedro-datasets
+
+# services
+fastapi[standard]
+uvicorn[standard]
+pydantic
+streamlit
+requests
 -e .

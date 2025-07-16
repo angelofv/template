@@ -22,51 +22,28 @@ def _to_repo_path(path: str | Path) -> Path:
 
 
 def load_config(
-    *,
-    preprocessing: str | Path = "configs/preprocessing.yaml",
-    modeling: str | Path = "configs/modeling.yaml",
-    plotting: str | Path = "configs/plotting.yaml",
+    config_file: str | Path = "configs/config.yaml",
+    env_var: str = "CONFIG_PATH",
 ) -> dict:
     """
-    Charge séparément les fichiers YAML de preprocessing, modeling et plotting,
-    et renvoie un dict Python pur :
-      {
-        "preprocessing": {...},
-        "modeling": {...},
-        "plotting": {...},
-      }
+    Charge un fichier YAML unique de configuration et renvoie son contenu
+    en tant que dictionnaire Python pur.
+
+    - Si la variable d'environnement CONFIG_PATH est définie, elle l'emporte.
+    - Aucun formatage interne n'est imposé au YAML; toutes les clés sont retournées.
     """
-    # Récupère les chemins via les variables d'environnement (facultatif)
-    preprocessing = os.getenv("PREPROCESSING_CONFIG", str(preprocessing))
-    modeling = os.getenv("MODELING_CONFIG", str(modeling))
-    plotting = os.getenv("PLOTTING_CONFIG", str(plotting))
+    # Détermination du chemin de configuration
+    cfg_path = Path(os.getenv(env_var, str(config_file)))
+    cfg_path = _to_repo_path(cfg_path)
 
-    # Construction des chemins absolus
-    paths = {
-        "preprocessing": _to_repo_path(preprocessing),
-        "modeling": _to_repo_path(modeling),
-        "plotting": _to_repo_path(plotting),
-    }
-    for name, p in paths.items():
-        if not p.exists():
-            raise FileNotFoundError(f"Config manquante : {name} -> {p}")
+    if not cfg_path.exists():
+        raise FileNotFoundError(f"Fichier de configuration introuvable : {cfg_path}")
 
-    # Chargement individuel en DictConfig
-    cfg_pre = OmegaConf.load(paths["preprocessing"])
-    cfg_mod = OmegaConf.load(paths["modeling"])
-    cfg_plt = OmegaConf.load(paths["plotting"])
+    # Chargement du YAML
+    cfg = OmegaConf.load(cfg_path)
 
-    # Fusion en un seul DictConfig
-    full_cfg = OmegaConf.create(
-        {
-            "preprocessing": cfg_pre,
-            "modeling": cfg_mod,
-            "plotting": cfg_plt,
-        }
-    )
-
-    # Conversion en containers Python purs
-    return OmegaConf.to_container(full_cfg, resolve=True)
+    # Conversion en container Python pur (dict, list, etc.)
+    return OmegaConf.to_container(cfg, resolve=True)
 
 
 def load_catalog() -> DataCatalog:

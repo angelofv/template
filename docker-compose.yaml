@@ -17,7 +17,7 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - mlflow_runs:/mlruns   # runs + artefacts
+      - mlflow_runs:/mlruns
 
   # ───────────────── Prefect Server ─────────────────
   prefect:
@@ -37,7 +37,10 @@ services:
 
   # ─────────────── ML Pipeline ───────────────
   pipeline:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: pipeline
     depends_on:
       mlflow:
         condition: service_started
@@ -45,10 +48,6 @@ services:
         condition: service_started
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    command:
-      - python
-      - -m
-      - src.run
     volumes:
       - .:/opt/app
       - mlflow_runs:/opt/app/mlruns
@@ -60,29 +59,36 @@ services:
       RICH_FORCE_TERMINAL:    "1"
       TERM:                   xterm-256color
       FORCE_COLOR:            "1"
+  # ─────────────────── API ────────────────────
   api:
     build:
       context: .
-      dockerfile: services/api/Dockerfile
+      dockerfile: Dockerfile
+      target: api
     ports:
       - "8000:8000"
     depends_on:
       - mlflow
-    environment:
-      MODEL_PATH: /app/data/03_models/model.pkl
     volumes:
       - ./data/03_models:/app/data/03_models:ro
+      - ~/.cache/pip:/root/.cache/pip:rw
+    environment:
+      MODEL_PATH: /app/data/03_models/model.pkl
+
+  # ───────────── Streamlit App ───────────────
   app:
     build:
       context: .
-      dockerfile: services/app/Dockerfile
+      dockerfile: Dockerfile
+      target: app
     ports:
       - "8501:8501"
     depends_on:
       - api
+    volumes:
+      - ~/.cache/pip:/root/.cache/pip:rw
     environment:
       API_URL: http://api:8000
-
 volumes:
   mlflow_runs:
   prefect_home:
