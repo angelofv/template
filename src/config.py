@@ -5,7 +5,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from kedro.config import OmegaConfigLoader
-from kedro.io import KedroDataCatalog
+from kedro.io import DataCatalog
 from omegaconf import OmegaConf
 
 # Charger les variables d'environnement depuis un fichier .env si présent
@@ -69,9 +69,9 @@ def load_config(
     return OmegaConf.to_container(full_cfg, resolve=True)
 
 
-def load_catalog() -> KedroDataCatalog:
-    """Charge le DataCatalog Kedro en utilisant la nouvelle classe KedroDataCatalog."""
+def load_catalog() -> DataCatalog:
+    """Charge le DataCatalog Kedro en utilisant la classe DataCatalog."""
     catalog_dir = _to_repo_path("configs")
     loader = OmegaConfigLoader(str(catalog_dir))
     catalog_conf = loader.get("catalog")
-    return KedroDataCatalog.from_config(catalog_conf)
+    return DataCatalog.from_config(catalog_conf)
