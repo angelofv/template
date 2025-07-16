@@ -3,7 +3,7 @@ import subprocess
 import time
 
 from fastapi.testclient import TestClient
-from services.api.main import app
+from template.services.api.api import app
 
 client = TestClient(app)
 

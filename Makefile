@@ -22,15 +22,13 @@ MODEL_PATH          ?= ./data/03_models/model.pkl
 
 .PHONY: create_environment requirements clean lint format test help
 
-create_environment: ## Create a Conda env named $(ENV_NAME)
+create_env: ## Create a Conda env named $(ENV_NAME)
 	conda create --name $(ENV_NAME) python=$(PYTHON_VERSION) -y
 	@echo ">>> Environment created. Activate with: conda activate $(ENV_NAME)"
 
-requirements: ## Install Python dependencies into active env (incl. API & app)
+requirements: ## Install Python dependencies into active env
 	$(PYTHON_INTERPRETER) -m pip install --upgrade pip
 	$(PYTHON_INTERPRETER) -m pip install -r requirements.txt
-	$(PYTHON_INTERPRETER) -m pip install -r services/api/requirements.txt
-	$(PYTHON_INTERPRETER) -m pip install -r services/app/requirements.txt
 
 clean: ## Remove Python artifacts & caches
 	find . -type f -name "*.py[co]" -delete
@@ -92,13 +90,13 @@ local-pipeline: ## Run pipeline locally (after local-infra)
 
 local-serve: ## Start API & Streamlit locally (after local-pipeline)
 	@echo "🚀  Starting API..." ; \
-	MODEL_PATH=$(MODEL_PATH) $(PYTHON_INTERPRETER) -m uvicorn services.api.main:app \
+	MODEL_PATH=$(MODEL_PATH) $(PYTHON_INTERPRETER) -m uvicorn services.api:app \
 	  --host 0.0.0.0 --port $(API_PORT) & \
 	echo -n "   Waiting for API" ; \
 	until curl -s http://localhost:$(API_PORT)/health >/dev/null 2>&1; do echo -n "."; sleep 1; done ; \
 	echo " ✔ API is up" ; \
 	echo "🚀  Starting Streamlit..." ; \
-	streamlit run services/app/app.py \
+	streamlit run services/app.py \
 	  --server.address=0.0.0.0 --server.port=$(APP_PORT) & \
 	echo -n "   Waiting for Streamlit" ; \
 	until curl -s http://localhost:$(APP_PORT)/ >/dev/null 2>&1; do echo -n "."; sleep 1; done ; \
@@ -134,13 +132,15 @@ infra: ## Start MLflow & Prefect via Docker
 
 pipeline: ## Run pipeline via Docker (after infra)
 	@echo "▶️  Launching pipeline (Docker)…"
-	@$(COMPOSE) up -d --build --no-deps pipeline
+	@$(COMPOSE) build --pull pipeline
+	@$(COMPOSE) up -d --no-deps pipeline
 	@$(COMPOSE) logs -f pipeline \
 	  | sed 's/host\.docker\.internal/localhost/g'
 
 serve: ## Start API & Streamlit via Docker (after pipeline)
 	@echo "🚀  Starting API & Streamlit (Docker)…"
-	@$(COMPOSE) up -d --build api app
+	@$(COMPOSE) build --parallel api app
+	@$(COMPOSE) up -d api app
 	@printf "\n👉 API: http://localhost:$(API_PORT)\n"
 	@printf "👉 Streamlit: http://localhost:$(APP_PORT)\n\n"
 
@@ -157,3 +157,4 @@ down: ## Stop & remove all Docker services & volumes
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?##' $(MAKEFILE_LIST) | \
 	  awk -F':|##' '{printf "%-20s %s\n", $$1, $$NF}'
+
