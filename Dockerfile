@@ -69,10 +69,9 @@ FROM runtime AS api
 
 WORKDIR /opt/app
 
-# Copier uniquement ce dont l’API a besoin
+# copier src et api
 COPY --chown=appuser:appuser services/api.py ./api.py
-COPY --chown=appuser:appuser src/utils.py ./src/utils.py
-COPY --chown=appuser:appuser src/__init__.py ./src/__init__.py
+COPY --chown=appuser:appuser src/ ./src/
 
 USER appuser
 
