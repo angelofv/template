@@ -5,15 +5,11 @@
 ENV_NAME        	= template
 PYTHON_VERSION      = 3.10
 
-# MLflow & Prefect settings
-MLFLOW_URI          ?= ./mlruns
+# Ports for local services
 MLFLOW_PORT         ?= 5000
 PREFECT_PORT        ?= 4200
-
-# API & Frontend settings
 API_PORT            ?= 8000
 APP_PORT            ?= 8501
-MODEL_PATH          ?= ./data/03_models/model.pkl
 
 #################################################################################
 # ENVIRONMENT & DEPENDENCIES                                                    #
@@ -36,7 +32,7 @@ clean: ## Remove Python artifacts & caches
 	rm -f .coverage tests/coverage.xml
 
 mlflow-clean: ## Delete local mlruns directory
-	rm -rf $(MLFLOW_URI)
+	rm -rf ./mlruns
 
 lint: ## Lint code with ruff
 	ruff check . --fix
@@ -61,8 +57,8 @@ test: ## Run pytest with coverage
 local-infra: ## Start MLflow & Prefect locally
 	@echo "▶️  Launching MLflow server..."; \
 	python -m mlflow server \
-	  --backend-store-uri $(MLFLOW_URI) \
-	  --artifacts-destination $(MLFLOW_URI) \
+	  --backend-store-uri ./mlruns \
+	  --artifacts-destination ./mlruns \
 	  --serve-artifacts \
 	  --host 0.0.0.0 \
 	  --port $(MLFLOW_PORT) & \
@@ -87,16 +83,14 @@ local-pipeline: ## Run pipeline locally (after local-infra)
 	  PREFECT_API_URL=http://localhost:$(PREFECT_PORT)/api \
 	  python -m src.run
 
-local-serve: ## Start API & Streamlit locally (after local-pipeline)
+local-serve:  ## Start API & Streamlit locally (after local-pipeline)
 	@echo "🚀  Starting API..." ; \
-	MODEL_PATH=$(MODEL_PATH) python -m uvicorn services.api:app \
-	  --host 0.0.0.0 --port $(API_PORT) & \
+	python -m fastapi dev ./services/api.py --host 0.0.0.0 --port $(API_PORT) & \
 	echo -n "   Waiting for API" ; \
 	until curl -s http://localhost:$(API_PORT)/health >/dev/null 2>&1; do echo -n "."; sleep 1; done ; \
 	echo " ✔ API is up" ; \
 	echo "🚀  Starting Streamlit..." ; \
-	streamlit run services/app.py \
-	  --server.address=0.0.0.0 --server.port=$(APP_PORT) & \
+	streamlit run services/app.py --server.address=0.0.0.0 --server.port=$(APP_PORT) & \
 	echo -n "   Waiting for Streamlit" ; \
 	until curl -s http://localhost:$(APP_PORT)/ >/dev/null 2>&1; do echo -n "."; sleep 1; done ; \
 	echo " ✔ Streamlit is up" ; \

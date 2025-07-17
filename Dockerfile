@@ -1,8 +1,4 @@
-# syntax=docker/dockerfile:1.4
-
-################################################################################
-# 1) Builder: compiler toutes les dépendances en wheels                        #
-################################################################################
+# 1) Builder: compiler toutes les dépendances en wheels
 FROM python:3.10-slim AS builder
 
 # Installer git (pour GitPython / MLflow)
@@ -22,9 +18,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip && \
     pip wheel --wheel-dir /tmp/wheels -r requirements.txt
 
-################################################################################
-# 2) Runtime de base: installer les wheels                                     #
-################################################################################
+# 2) Runtime de base: installer les wheels
 FROM python:3.10-slim AS runtime
 
 # Git pour GitPython warnings
@@ -50,9 +44,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir /tmp/wheels/* && \
     rm -rf /tmp/wheels
 
-################################################################################
-# 3) Stage “pipeline”                                                          #
-################################################################################
+# 3) Stage "pipeline"
 FROM runtime AS pipeline
 
 # Copier tout le projet (code, configs, notebooks ignorés par .dockerignore)
@@ -62,9 +54,7 @@ USER appuser
 
 ENTRYPOINT ["python", "-m", "src.run"]
 
-################################################################################
-# 4) Stage “api”                                                               #
-################################################################################
+# 4) Stage "api"
 FROM runtime AS api
 
 WORKDIR /opt/app
@@ -78,9 +68,7 @@ USER appuser
 
 ENTRYPOINT ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
 
-################################################################################
-# 5) Stage “app” (Streamlit)                                                   #
-################################################################################
+# 5) Stage "app" (Streamlit)
 FROM runtime AS app
 
 WORKDIR /opt/app
