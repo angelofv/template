@@ -24,11 +24,6 @@
 
 ---
 
-> **Heads‑up 🖼️**
-> The Streamlit dashboard is only a starting point. Customise it by editing `services/app.py` **or** by exporting environment variables such as `PROFILE_NAME`, `PROFILE_DESC`, `PROFILE_AVATAR`, `LINK_GITHUB`, …
-
----
-
 ## ⚡ Quick‑start
 
 ### 0. Prerequisites
