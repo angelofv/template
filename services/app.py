@@ -1,29 +1,28 @@
 from __future__ import annotations
 
 import os
-from typing import Dict, List
 
 import requests
 import streamlit as st
 
 # ────────────────────── CONFIG ──────────────────────
 st.set_page_config(
-    page_title=os.getenv("APP_NAME", "ML Project"),
+    page_title="ML Project",
     page_icon="🤖",
     layout="centered",
 )
 
 # ───────────── Sidebar – profile ──────────────
-PROFILE: Dict[str, str] = {
-    "name": os.getenv("PROFILE_NAME", "Angelo F.V."),
-    "description": os.getenv("PROFILE_DESC", "Data Scientist & ML Engineer 🛠️"),
-    "location": os.getenv("PROFILE_LOC", "Paris, France"),
-    "avatar": os.getenv("PROFILE_AVATAR", "https://i.postimg.cc/6pDXBGFy/DSC0064-1.jpg"),
+PROFILE: dict[str, str] = {
+    "name": "Angelo F.V.",
+    "description": "Data Scientist & ML Engineer 🛠️",
+    "location": "Paris, France",
+    "avatar": "https://i.postimg.cc/6pDXBGFy/DSC0064-1.jpg",
 }
-LINKS: Dict[str, str] = {
-    "LinkedIn": os.getenv("LINK_LINKEDIN", "https://linkedin.com/in/angelo-fv/"),
-    "GitHub": os.getenv("LINK_GITHUB", "https://github.com/angelofv"),
-    "Email": os.getenv("LINK_EMAIL", "mailto:angelo.fv@outlook.fr"),
+LINKS: dict[str, str] = {
+    "LinkedIn": "https://linkedin.com/in/angelo-fv/",
+    "GitHub": "https://github.com/angelofv",
+    "Email": "mailto:angelo.fv@outlook.fr",
 }
 
 with st.sidebar:
@@ -36,11 +35,11 @@ with st.sidebar:
         st.markdown(inline)
 
 # ───────────── Landing page ──────────────
-st.title(os.getenv("PROJECT_TITLE", "My ML Project"))
-st.write(os.getenv("PROJECT_DESC", "_A concise project description._"))
+st.title("My ML Project")
+st.write("A concise project description.")
 
-docs_url = os.getenv("PROJECT_DOCS_URL", "a")
-repo_url = os.getenv("PROJECT_REPO_URL", "b")
+docs_url = "a"
+repo_url = "b"
 
 if docs_url or repo_url:
     st.subheader("Resources")
@@ -52,7 +51,7 @@ if docs_url or repo_url:
 st.markdown("---")
 
 # ───────────── Model explorer ──────────────
-FEATURES: List[str] = [
+FEATURES: list[str] = [
     "sepal length (cm)",
     "sepal width (cm)",
     "petal length (cm)",

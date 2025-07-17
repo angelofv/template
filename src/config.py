@@ -3,52 +3,65 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from dotenv import load_dotenv
 from kedro.config import OmegaConfigLoader
 from kedro.io import DataCatalog
+import mlflow
 from omegaconf import OmegaConf
 
-# Charger les variables d'environnement depuis un fichier .env si présent
-load_dotenv()
-
-# Racine du dépôt
+# Project root directory
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _to_repo_path(path: str | Path) -> Path:
-    """Convertit un chemin relatif en absolu depuis la racine du repo."""
+    """
+    Convert a relative path to an absolute path anchored at the project root.
+    If the provided path is already absolute, it is returned unchanged.
+    """
     p = Path(path)
     return p if p.is_absolute() else _REPO_ROOT / p
 
 
 def load_config(
     config_file: str | Path = "configs/config.yaml",
-    env_var: str = "CONFIG_PATH",
 ) -> dict:
     """
-    Charge un fichier YAML unique de configuration et renvoie son contenu
-    en tant que dictionnaire Python pur.
-
-    - Si la variable d'environnement CONFIG_PATH est définie, elle l'emporte.
-    - Aucun formatage interne n'est imposé au YAML; toutes les clés sont retournées.
+    Load a single YAML configuration file and return its contents
+    as a native Python dictionary.
     """
-    # Détermination du chemin de configuration
-    cfg_path = Path(os.getenv(env_var, str(config_file)))
-    cfg_path = _to_repo_path(cfg_path)
+    cfg_path = _to_repo_path(config_file)
 
     if not cfg_path.exists():
-        raise FileNotFoundError(f"Fichier de configuration introuvable : {cfg_path}")
+        raise FileNotFoundError(f"Configuration file not found: {cfg_path}")
 
-    # Chargement du YAML
     cfg = OmegaConf.load(cfg_path)
-
-    # Conversion en container Python pur (dict, list, etc.)
     return OmegaConf.to_container(cfg, resolve=True)
 
 
 def load_catalog() -> DataCatalog:
-    """Charge le DataCatalog Kedro en utilisant la classe DataCatalog."""
+    """
+    Initialize and return a Kedro DataCatalog based on the
+    YAML configurations in the 'configs' directory.
+    """
     catalog_dir = _to_repo_path("configs")
     loader = OmegaConfigLoader(str(catalog_dir))
-    catalog_conf = loader.get("catalog")
-    return DataCatalog.from_config(catalog_conf)
+    raw_conf = loader.get("catalog")
+
+    # Convert each dataset filepath to an absolute path
+    fixed_conf: dict[str, dict] = {}
+    for name, ds_conf in raw_conf.items():
+        ds = dict(ds_conf)
+        if "filepath" in ds:
+            ds["filepath"] = str(_to_repo_path(ds["filepath"]))
+        fixed_conf[name] = ds
+
+    return DataCatalog.from_config(fixed_conf)
+
+
+def init_mlflow(
+    tracking_uri: str | None = None,
+    experiment_name: str = "default",
+) -> None:
+    if tracking_uri is None:
+        tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
+    mlflow.set_tracking_uri(tracking_uri)
+    mlflow.set_experiment(experiment_name)

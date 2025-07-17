@@ -69,9 +69,10 @@ FROM runtime AS api
 
 WORKDIR /opt/app
 
-# copier src et api
+# Code + configs
 COPY --chown=appuser:appuser services/api.py ./api.py
 COPY --chown=appuser:appuser src/ ./src/
+COPY --chown=appuser:appuser configs/ ./configs/
 
 USER appuser
 

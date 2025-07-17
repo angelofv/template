@@ -1,11 +1,10 @@
 import mlflow
 from prefect import flow, get_run_logger
 
-from .config import load_catalog, load_config
-from .extract import load_raw_data, preprocess
-from .plot_metrics import plot_metrics
-from .train import train_model
-from .utils import init_mlflow
+from src.config import init_mlflow, load_catalog, load_config
+from src.extract import load_raw_data, preprocess
+from src.plot_metrics import plot_metrics
+from src.train import train_model
 
 
 @flow(name="ML Pipeline")
