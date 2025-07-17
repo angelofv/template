@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import streamlit as st
+from pyexpat import model
 
-from src.config import load_catalog
+import mlflow.sklearn
+import streamlit as st
 
 # ────────────────────── CONFIG ──────────────────────
 st.set_page_config(
@@ -35,9 +36,21 @@ with st.sidebar:
 
 st.markdown("---")
 
-# ─────────── Load model from catalog ───────────
-catalog = load_catalog()
-model = catalog.load("model")
+
+# ─────────── Load model from ML Registry ───────────
+@st.cache_resource
+def load_model():
+    """Load the model from the MLflow Model Registry."""
+    mlflow.set_tracking_uri("http://localhost:5000")
+    model_name = "IrisClassifier"
+    model_version = "latest"
+    # Load the model from the Model Registry
+    model_uri = f"models:/{model_name}/{model_version}"
+    model = mlflow.sklearn.load_model(model_uri)
+    return model
+
+
+model = load_model()
 
 # ───────────── Model explorer ──────────────
 FEATURES: list[str] = [

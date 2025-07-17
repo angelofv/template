@@ -33,5 +33,10 @@ def train_model(
     mlflow.log_metric("train_accuracy", score)
 
     # 5) Log du modèle
-    mlflow.sklearn.log_model(model, name="model")
+    mlflow.sklearn.log_model(
+        sk_model=model,
+        name="sklearn-model",
+        input_example=X.iloc[:5],
+        registered_model_name="IrisClassifier",
+    )
     return model

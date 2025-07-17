@@ -59,7 +59,7 @@ def load_catalog() -> DataCatalog:
 
 def init_mlflow(
     tracking_uri: str | None = None,
-    experiment_name: str = "default",
+    experiment_name: str = "Default",
 ) -> None:
     if tracking_uri is None:
         tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")

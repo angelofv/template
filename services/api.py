@@ -1,33 +1,38 @@
+# services/api.py
+from contextlib import asynccontextmanager
+import os
 from fastapi import FastAPI
-from kedro.io import DatasetError
+import mlflow.sklearn
 from pydantic import BaseModel
 
-from src.config import load_catalog
 
-catalog = load_catalog()
-app = FastAPI(title="ML FastAPI Service")
+# 1) on définit le lifespan qui charge le modèle une seule fois
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000"))
+    model_name = "IrisClassifier"
+    model_version = "latest"
+    uri = f"models:/{model_name}/{model_version}"
+    app.state.model = mlflow.sklearn.load_model(uri)
+    yield
 
-try:
-    model = catalog.load("model")
-except (FileNotFoundError, DatasetError) as e:  # <- broaden the catch
-    model = None
-    app.state._model_load_error = str(e)
+
+# 2) on passe ce lifespan à FastAPI
+app = FastAPI(title="ML FastAPI Service", lifespan=lifespan)
 
 
 class PredictRequest(BaseModel):
-    features: list[list[float]]  # Liste d'observations, chacune une liste de floats
+    features: list[list[float]]
 
 
 @app.get("/health")
 def health():
-    status = {"status": "ok"}
-    # Ajoute info si fallback activé
-    if hasattr(app.state, "_model_load_error"):
-        status["warning"] = "Model load error: " + app.state._model_load_error
-    return status
+    return {"status": "ok"}
 
 
 @app.post("/predict")
 def predict(request: PredictRequest):
+    # 3) on récupère le modèle chargé au démarrage
+    model = app.state.model
     preds = model.predict(request.features)
     return {"predictions": preds.tolist()}
