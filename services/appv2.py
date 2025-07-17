@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import os
-
-import requests
 import streamlit as st
+
+from src.config import load_catalog
 
 # ────────────────────── CONFIG ──────────────────────
 st.set_page_config(
@@ -34,21 +33,11 @@ with st.sidebar:
     if inline:
         st.markdown(inline)
 
-# ───────────── Landing page ──────────────
-st.title("My ML Project")
-st.write("A concise project description.")
-
-docs_url = "a"
-repo_url = "b"
-
-if docs_url or repo_url:
-    st.subheader("Resources")
-    if docs_url:
-        st.markdown(f"📄 **Docs** – Full reference & examples [here]({docs_url}).")
-    if repo_url:
-        st.markdown(f"🐙 **Repo** – Browse the source code on GitHub [here]({repo_url}).")
-
 st.markdown("---")
+
+# ─────────── Load model from catalog ───────────
+catalog = load_catalog()
+model = catalog.load("model")
 
 # ───────────── Model explorer ──────────────
 FEATURES: list[str] = [
@@ -57,18 +46,14 @@ FEATURES: list[str] = [
     "petal length (cm)",
     "petal width (cm)",
 ]
-API_URL = os.getenv("API_URL", "http://localhost:8000") + "/predict"
-
 st.header("Model Explorer")
 with st.form("prediction_form"):
     st.write("Enter feature values:")
     values = [st.number_input(f, value=0.0, format="%.3f") for f in FEATURES]
     if st.form_submit_button("Predict"):
         try:
-            with st.spinner("Calling model…"):
-                r = requests.post(API_URL, json={"features": [values]}, timeout=5)
-                r.raise_for_status()
-                preds = r.json().get("predictions", [])
-            st.success(f"Prediction: {preds[0] if preds else '—'}")
-        except requests.exceptions.RequestException as exc:
-            st.error(f"Request failed: {exc}")
+            with st.spinner("Predicting…"):
+                pred = model.predict([values])[0]
+            st.success(f"Prediction: {pred}")
+        except Exception as exc:
+            st.error(f"Prediction failed: {exc}")
