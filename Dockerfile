@@ -58,10 +58,8 @@ ENTRYPOINT ["python", "-m", "src.run"]
 FROM runtime AS app
 
 WORKDIR /opt/app
-
-# Copier uniquement le front Streamlit
 COPY --chown=appuser:appuser app/app.py ./app.py
+EXPOSE 8501
 
 USER appuser
-
-ENTRYPOINT ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=8501"]
+ENTRYPOINT ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=8501", "--server.headless=true"]
