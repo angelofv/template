@@ -4,7 +4,6 @@
 
 ENV_NAME        	= template
 PYTHON_VERSION      = 3.10
-PYTHON_INTERPRETER  = python
 
 # MLflow & Prefect settings
 MLFLOW_URI          ?= ./mlruns
@@ -27,8 +26,8 @@ create_env: ## Create a Conda env named $(ENV_NAME)
 	@echo ">>> Environment created. Activate with: conda activate $(ENV_NAME)"
 
 requirements: ## Install Python dependencies into active env
-	$(PYTHON_INTERPRETER) -m pip install --upgrade pip
-	$(PYTHON_INTERPRETER) -m pip install -r requirements.txt
+	python -m pip install --upgrade pip
+	python -m pip install -r requirements.txt
 
 clean: ## Remove Python artifacts & caches
 	find . -type f -name "*.py[co]" -delete
@@ -46,7 +45,7 @@ format: ## Format code with ruff
 	ruff format . && ruff check --fix .
 
 test: ## Run pytest with coverage
-	$(PYTHON_INTERPRETER) -m pytest \
+	python -m pytest \
 	  --rootdir=. \
 	  --cov=src \
 	  --cov-config=tests/.coveragerc \
@@ -61,7 +60,7 @@ test: ## Run pytest with coverage
 
 local-infra: ## Start MLflow & Prefect locally
 	@echo "▶️  Launching MLflow server..."; \
-	$(PYTHON_INTERPRETER) -m mlflow server \
+	python -m mlflow server \
 	  --backend-store-uri $(MLFLOW_URI) \
 	  --artifacts-destination $(MLFLOW_URI) \
 	  --serve-artifacts \
@@ -86,11 +85,11 @@ local-pipeline: ## Run pipeline locally (after local-infra)
 	@echo "▶️  Launching pipeline …"
 	@MLFLOW_TRACKING_URI=http://localhost:$(MLFLOW_PORT) \
 	  PREFECT_API_URL=http://localhost:$(PREFECT_PORT)/api \
-	  $(PYTHON_INTERPRETER) -m src.run
+	  python -m src.run
 
 local-serve: ## Start API & Streamlit locally (after local-pipeline)
 	@echo "🚀  Starting API..." ; \
-	MODEL_PATH=$(MODEL_PATH) $(PYTHON_INTERPRETER) -m uvicorn services.api:app \
+	MODEL_PATH=$(MODEL_PATH) python -m uvicorn services.api:app \
 	  --host 0.0.0.0 --port $(API_PORT) & \
 	echo -n "   Waiting for API" ; \
 	until curl -s http://localhost:$(API_PORT)/health >/dev/null 2>&1; do echo -n "."; sleep 1; done ; \
@@ -116,12 +115,10 @@ local-down: ## Stop all local services by port
 # DOCKER                                                                        #
 #################################################################################
 
-COMPOSE := docker compose
-
 .PHONY: infra pipeline serve down
 
 infra: ## Start MLflow & Prefect via Docker
-	@$(COMPOSE) up -d mlflow prefect
+	docker compose up -d mlflow prefect
 	@printf "⏳ Waiting for Prefect API… "
 	@until curl -s http://localhost:$(PREFECT_PORT)/api/health >/dev/null; do \
 	  printf "."; sleep 1; \
@@ -132,20 +129,20 @@ infra: ## Start MLflow & Prefect via Docker
 
 pipeline: ## Run pipeline via Docker (after infra)
 	@echo "▶️  Launching pipeline (Docker)…"
-	@$(COMPOSE) build --pull pipeline
-	@$(COMPOSE) up -d --no-deps pipeline
-	@$(COMPOSE) logs -f --tail=0 pipeline | sed 's/host\.docker\.internal/localhost/g'
+	docker compose build --pull pipeline
+	docker compose up -d --no-deps pipeline
+	docker compose logs -f --tail=0 pipeline | sed 's/host\.docker\.internal/localhost/g'
 
 serve: ## Start API & Streamlit via Docker (after pipeline)
 	@echo "🚀  Starting API & Streamlit (Docker)…"
-	@$(COMPOSE) build api app
-	@$(COMPOSE) up -d api app
+	docker compose build api app
+	docker compose up -d api app
 	@printf "\n👉 API: http://localhost:$(API_PORT)\n"
 	@printf "👉 Streamlit: http://localhost:$(APP_PORT)\n\n"
 
 down: ## Stop & remove all Docker services & volumes
 	@echo "→ Stopping and cleaning up Docker services…"
-	@$(COMPOSE) down -v
+	docker compose down -v
 
 #################################################################################
 # HELP                                                                           #
