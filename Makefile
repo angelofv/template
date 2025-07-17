@@ -8,7 +8,6 @@ PYTHON_VERSION      = 3.10
 # Ports for local services
 MLFLOW_PORT         ?= 5000
 PREFECT_PORT        ?= 4200
-API_PORT            ?= 8000
 APP_PORT            ?= 8501
 
 #################################################################################
@@ -55,27 +54,25 @@ test: ## Run pytest with coverage
 .PHONY: local-infra local-pipeline local-serve local-down
 
 local-infra: ## Start MLflow & Prefect locally
-	@echo "▶️  Launching MLflow server..."; \
-	python -m mlflow server \
+	@echo "🚀  Launching MLflow & Prefect"
+	@python -m mlflow server \
 	  --backend-store-uri ./mlruns \
 	  --artifacts-destination ./mlruns \
 	  --serve-artifacts \
 	  --host 0.0.0.0 \
-	  --port $(MLFLOW_PORT) & \
-	printf "   Waiting for MLflow"; \
-	until curl -s http://localhost:$(MLFLOW_PORT)/ >/dev/null 2>&1; do printf "."; sleep 1; done; \
-	echo " ✔ MLflow is up"; \
-	\
-	echo "▶️  Launching Prefect server..."; \
-	prefect server start \
+	  --port $(MLFLOW_PORT) & 
+	@prefect server start \
 	  --host 0.0.0.0 \
-	  --port $(PREFECT_PORT) & \
-	printf "   Waiting for Prefect"; \
-	until curl -s http://localhost:$(PREFECT_PORT)/api/health >/dev/null 2>&1; do printf "."; sleep 1; done; \
-	echo " ✔ Prefect is up"; \
-	\
-	printf "\n👉 MLflow UI:   http://localhost:$(MLFLOW_PORT)\n"; \
-	printf "👉 Prefect UI:  http://localhost:$(PREFECT_PORT)\n\n"
+	  --port $(PREFECT_PORT) &
+	@echo -n "⏳ Waiting for MLflow & Prefect"
+	@until curl -s http://localhost:$(MLFLOW_PORT)/ >/dev/null 2>&1 \
+	  && curl -s http://localhost:$(PREFECT_PORT)/api/health >/dev/null 2>&1; do \
+		echo -n "."; \
+		sleep 1; \
+	done
+	@echo " ✔ All services are up!"
+	@printf "\n👉 MLflow UI:   http://localhost:$(MLFLOW_PORT)\n"
+	@printf "👉 Prefect UI:  http://localhost:$(PREFECT_PORT)\n\n"
 
 local-pipeline: ## Run pipeline locally (after local-infra)
 	@echo "▶️  Launching pipeline …"
@@ -83,26 +80,19 @@ local-pipeline: ## Run pipeline locally (after local-infra)
 	  PREFECT_API_URL=http://localhost:$(PREFECT_PORT)/api \
 	  python -m src.run
 
-local-serve:  ## Start API & Streamlit locally (after local-pipeline)
-	@echo "🚀  Starting API..." ; \
-	python -m fastapi dev ./services/api.py --host 0.0.0.0 --port $(API_PORT) & \
-	echo -n "   Waiting for API" ; \
-	until curl -s http://localhost:$(API_PORT)/health >/dev/null 2>&1; do echo -n "."; sleep 1; done ; \
-	echo " ✔ API is up" ; \
-	echo "🚀  Starting Streamlit..." ; \
-	streamlit run services/app.py --server.address=0.0.0.0 --server.port=$(APP_PORT) & \
+local-serve:  ## Start Streamlit locally
+	@echo "🚀  Starting Streamlit" ; \
+	streamlit run app/app.py --server.address=0.0.0.0 --server.port=$(APP_PORT) & \
 	echo -n "   Waiting for Streamlit" ; \
-	until curl -s http://localhost:$(APP_PORT)/ >/dev/null 2>&1; do echo -n "."; sleep 1; done ; \
+	until curl -s http://localhost:$(APP_PORT)/ >/dev/null 2>&1; do sleep 1; done ; \
 	echo " ✔ Streamlit is up" ; \
-	printf "\n👉 API:        http://localhost:$(API_PORT)\n" ; \
-	printf "👉 Streamlit:  http://localhost:$(APP_PORT)\n\n" ; \
+	printf "\n👉 Streamlit: http://localhost:$(APP_PORT)\n\n" ; \
 	wait
 
 local-down: ## Stop all local services by port
-	@echo "🛑  Killing processes on ports $(MLFLOW_PORT), $(PREFECT_PORT), $(API_PORT), $(APP_PORT)…"
+	@echo "🛑  Killing processes on ports $(MLFLOW_PORT), $(PREFECT_PORT), $(APP_PORT)…"
 	-@lsof -ti tcp:$(MLFLOW_PORT)   | xargs -r kill
 	-@lsof -ti tcp:$(PREFECT_PORT)  | xargs -r kill
-	-@lsof -ti tcp:$(API_PORT)      | xargs -r kill
 	-@lsof -ti tcp:$(APP_PORT)      | xargs -r kill
 
 #################################################################################
@@ -112,12 +102,15 @@ local-down: ## Stop all local services by port
 .PHONY: infra pipeline serve down
 
 infra: ## Start MLflow & Prefect via Docker
-	docker compose up -d mlflow prefect
-	@printf "⏳ Waiting for Prefect API… "
-	@until curl -s http://localhost:$(PREFECT_PORT)/api/health >/dev/null; do \
-	  printf "."; sleep 1; \
+	@echo "🚀  Launching MLflow & Prefect via Docker"
+	@docker compose up -d mlflow prefect
+	@echo -n "⏳ Waiting for MLflow & Prefect"
+	@until curl -s http://localhost:$(MLFLOW_PORT)/ >/dev/null 2>&1 \
+	  && curl -s http://localhost:$(PREFECT_PORT)/api/health >/dev/null 2>&1; do \
+		echo -n "."; \
+		sleep 1; \
 	done
-	@echo " ✔ Ready!"
+	@echo " ✔ All services are up!"
 	@printf "\n👉 MLflow UI: http://localhost:$(MLFLOW_PORT)\n"
 	@printf "👉 Prefect UI: http://localhost:$(PREFECT_PORT)\n\n"
 
@@ -128,10 +121,9 @@ pipeline: ## Run pipeline via Docker (after infra)
 	docker compose logs -f --tail=0 pipeline | sed 's/host\.docker\.internal/localhost/g'
 
 serve: ## Start API & Streamlit via Docker (after pipeline)
-	@echo "🚀  Starting API & Streamlit (Docker)…"
-	docker compose build api app
-	docker compose up -d api app
-	@printf "\n👉 API: http://localhost:$(API_PORT)\n"
+	@echo "🚀  Starting Streamlit (Docker)…"
+	docker compose build app
+	docker compose up -d app
 	@printf "👉 Streamlit: http://localhost:$(APP_PORT)\n\n"
 
 down: ## Stop & remove all Docker services & volumes

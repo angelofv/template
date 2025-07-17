@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import os
+from pyexpat import model
 
-import requests
+import mlflow.sklearn
 import streamlit as st
 
 # ────────────────────── CONFIG ──────────────────────
@@ -34,21 +35,23 @@ with st.sidebar:
     if inline:
         st.markdown(inline)
 
-# ───────────── Landing page ──────────────
-st.title("My ML Project")
-st.write("A concise project description.")
-
-docs_url = "a"
-repo_url = "b"
-
-if docs_url or repo_url:
-    st.subheader("Resources")
-    if docs_url:
-        st.markdown(f"📄 **Docs** – Full reference & examples [here]({docs_url}).")
-    if repo_url:
-        st.markdown(f"🐙 **Repo** – Browse the source code on GitHub [here]({repo_url}).")
-
 st.markdown("---")
+
+
+# ─────────── Load model from ML Registry ───────────
+@st.cache_resource
+def load_model():
+    """Load the model from the MLflow Model Registry."""
+    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000"))
+    model_name = "IrisClassifier"
+    model_version = "latest"
+    # Load the model from the Model Registry
+    model_uri = f"models:/{model_name}/{model_version}"
+    model = mlflow.sklearn.load_model(model_uri)
+    return model
+
+
+model = load_model()
 
 # ───────────── Model explorer ──────────────
 FEATURES: list[str] = [
@@ -57,18 +60,14 @@ FEATURES: list[str] = [
     "petal length (cm)",
     "petal width (cm)",
 ]
-API_URL = os.getenv("API_URL", "http://localhost:8000") + "/predict"
-
 st.header("Model Explorer")
 with st.form("prediction_form"):
     st.write("Enter feature values:")
     values = [st.number_input(f, value=0.0, format="%.3f") for f in FEATURES]
     if st.form_submit_button("Predict"):
         try:
-            with st.spinner("Calling model…"):
-                r = requests.post(API_URL, json={"features": [values]}, timeout=5)
-                r.raise_for_status()
-                preds = r.json().get("predictions", [])
-            st.success(f"Prediction: {preds[0] if preds else '—'}")
-        except requests.exceptions.RequestException as exc:
-            st.error(f"Request failed: {exc}")
+            with st.spinner("Predicting…"):
+                pred = model.predict([values])[0]
+            st.success(f"Prediction: {pred}")
+        except Exception as exc:
+            st.error(f"Prediction failed: {exc}")

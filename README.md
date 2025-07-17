@@ -135,7 +135,7 @@ Badges at the top of this file always reflect the latest run.
 ├── data/                  # 01_raw / 02_processed / 03_models / 04_reports
 ├── notebooks/             # Exploratory notebooks (ignored by Docker)
 │   └── 00_exploration.ipynb
-├── services/              # User‑facing layers
+├── app/              # User‑facing layers
 │   ├── api.py             # FastAPI inference service
 │   └── app.py             # Streamlit demo UI
 ├── src/                   # Pipeline code (Prefect flows, modelling, utils)

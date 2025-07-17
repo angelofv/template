@@ -54,27 +54,13 @@ USER appuser
 
 ENTRYPOINT ["python", "-m", "src.run"]
 
-# 4) Stage "api"
-FROM runtime AS api
-
-WORKDIR /opt/app
-
-# Code + configs
-COPY --chown=appuser:appuser services/api.py ./api.py
-COPY --chown=appuser:appuser src/ ./src/
-COPY --chown=appuser:appuser configs/ ./configs/
-
-USER appuser
-
-ENTRYPOINT ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
-
-# 5) Stage "app" (Streamlit)
+# 4) Stage "app" (Streamlit)
 FROM runtime AS app
 
 WORKDIR /opt/app
 
 # Copier uniquement le front Streamlit
-COPY --chown=appuser:appuser services/app.py ./app.py
+COPY --chown=appuser:appuser app/app.py ./app.py
 
 USER appuser
 
