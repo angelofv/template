@@ -149,8 +149,6 @@ All pipeline tunables live in a single YAML file:
 | --------------------- | -------------------------------------- | ------------------- |
 | `configs/config.yaml` | every Prefect task via `load_config()` | See `src/config.py` |
 
-Override the path by exporting `CONFIG_PATH`.
-
 The Kedro **DataCatalog** is defined in `configs/catalog.yaml`.
 
 ---
