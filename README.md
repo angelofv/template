@@ -92,17 +92,14 @@ Run `make help` to list every available target and its description.
 Tests require the repository root on **PYTHONPATH** so that `import src` resolves.
 
 ```bash
-make test                # recommended – sets env vars automatically
+make test
 ```
 
 If you must, run manually:
 
 ```bash
-export PYTHONPATH="$PWD:$PYTHONPATH"
-pytest -q
+python -m pytest -q
 ```
-
-> `ModuleNotFoundError: src`? Check the current working directory or `$PYTHONPATH`.
 
 ---
 
@@ -124,19 +121,39 @@ Badges at the top of this file always reflect the latest run.
 ## 🗂 Project layout
 
 ```
-├── src/                  # Prefect flows, model, plotting
-│   ├── extract.py        # load_raw_data & preprocess tasks
-│   ├── train.py          # train_model task
-│   ├── plot_metrics.py   # plot_metrics task
-│   └── run.py            # orchestrates the flow
-├── services/             # FastAPI (api.py) & Streamlit (app.py)
-├── configs/              # config.yaml + Kedro catalog
-├── data/                 # 01_raw / 02_processed / 03_models / 04_reports
-├── notebooks/            # Exploratory notebooks (ignored by Docker)
-├── Dockerfile            # Multi‑stage build (pipeline / api / app)
-├── docker-compose.yaml
-├── Makefile              # Dev helpers
-└── tests/                # Tiny unit + smoke suite
+├── README.md
+├── Dockerfile             # Multi‑stage build (pipeline / api / app)
+├── docker-compose.yaml    # Local orchestration
+├── Makefile               # Dev helpers
+├── pyproject.toml         # Project metadata (PEP 621)
+├── requirements.txt       # Runtime + dev Python deps
+├── .dockerignore
+├── LICENSE
+├── configs/               # Global YAML config + Kedro DataCatalog
+│   ├── catalog.yaml
+│   └── config.yaml
+├── data/                  # 01_raw / 02_processed / 03_models / 04_reports
+├── notebooks/             # Exploratory notebooks (ignored by Docker)
+│   └── 00_exploration.ipynb
+├── services/              # User‑facing layers
+│   ├── api.py             # FastAPI inference service
+│   └── app.py             # Streamlit demo UI
+├── src/                   # Pipeline code (Prefect flows, modelling, utils)
+│   ├── __init__.py
+│   ├── config.py
+│   ├── extract.py
+│   ├── train.py
+│   ├── plot_metrics.py
+│   └── run.py
+├── tests/                 # Unit & smoke tests
+│   ├── test_modeling.py
+│   ├── test_plotting.py
+│   ├── test_preprocessing.py
+│   ├── test_services.py
+│   └── .coveragerc
+└── .github/workflows/     # CI / CD definitions
+    ├── ci.yml
+    └── cd.yml
 ```
 
 ---
