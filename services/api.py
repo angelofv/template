@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from kedro.io import DatasetError
 from pydantic import BaseModel
 
 from src.config import load_catalog
@@ -8,7 +9,8 @@ app = FastAPI(title="ML FastAPI Service")
 
 try:
     model = catalog.load("model")
-except FileNotFoundError as e:
+except (FileNotFoundError, DatasetError) as e:  # <- broaden the catch
+    model = None
     app.state._model_load_error = str(e)
 
 
