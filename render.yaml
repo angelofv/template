@@ -1,3 +1,5 @@
+# render.yaml
+
 databases:
   - name: mlflow-db
     plan: free
@@ -8,7 +10,11 @@ services:
     env: docker
     plan: free
 
-    # On ne précise plus dockerContext/dockerfilePath :
+    # 1) Docker context pour buildCommand
+    dockerContext: .           # racine du repo
+    # (on ne précise plus dockerfilePath, car buildCommand l’indique)
+
+    # 2) Build seulement jusqu'à target "mlflow"
     buildCommand: |
       docker build \
         --target mlflow \
@@ -16,15 +22,17 @@ services:
         -t mlflow-server:latest \
         .
 
-    # Render va utiliser cette image et démarrer avec startCommand :
+    # 3) Lancement manuel du MLflow server
     startCommand: |
-      # entrypoint.sh lit déjà MLFLOW_BACKEND_URI et MLFLOW_S3_BUCKET
-      ./entrypoint.sh
+      # le script ENTRYPOINT est à la racine de l’image
+      /entrypoint.sh
 
     autoDeploy: true
-    healthCheckPath: /
+    healthCheckPath: /          # expose le serveur MLflow à /
+
     envVars:
       - key: MLFLOW_BACKEND_URI
         fromDatabase:
           name: mlflow-db
           property: connectionString
+      # (tes AWS_* et MLFLOW_S3_BUCKET restent à ajouter dans l’UI Render)
