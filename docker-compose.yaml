@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   mlflow:
     build:
@@ -44,7 +42,7 @@ services:
       - FORCE_COLOR=1
     depends_on:
       mlflow:
-        condition: service_healthy
+        condition: service_started
       prefect:
         condition: service_started
 
