@@ -1,80 +1,55 @@
-services:
-  # MLflow UI (file-store)
-  mlflow:
-    image: ghcr.io/mlflow/mlflow:latest
-    command:
-      - mlflow
-      - server
-      - --backend-store-uri
-      - /mlruns
-      - --artifacts-destination
-      - /mlruns
-      - --serve-artifacts
-      - --host
-      - 0.0.0.0
-      - --port
-      - "5000"
-    ports:
-      - "5000:5000"
-    volumes:
-      - mlflow_runs:/mlruns
+x-mlflow-env: &mlflow-env
+  AWS_ACCESS_KEY_ID:     ${AWS_ACCESS_KEY_ID:-}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+  AWS_DEFAULT_REGION:    ${AWS_DEFAULT_REGION:-}
+  MLFLOW_S3_BUCKET:      ${MLFLOW_S3_BUCKET:-}
 
-  # Prefect Server
+services:
+  mlflow:
+    build: { context: ., target: mlflow }
+    ports: [ "5000:5000" ]
+    environment: *mlflow-env
+    volumes: [ .:/opt/app ]
+
   prefect:
     image: prefecthq/prefect:3-latest
-    command:
-      - prefect
-      - server
-      - start
-      - --host
-      - 0.0.0.0
-      - --port
-      - "4200"
-    ports:
-      - "4200:4200"
-    volumes:
-      - prefect_home:/home/app/.prefect
+    command: prefect server start --host 0.0.0.0 --port 4200
+    ports: [ "4200:4200" ]
+    volumes: [ prefect_home:/home/app/.prefect ]
 
-  # ML Pipeline
   pipeline:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: pipeline
-    depends_on:
-      mlflow:
-        condition: service_started
-      prefect:
-        condition: service_started
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - .:/opt/app
-      - mlflow_runs:/opt/app/mlruns
+    build: { context: ., target: pipeline }
+    extra_hosts: [ "host.docker.internal:host-gateway" ]
+    volumes: [ .:/opt/app ]
     environment:
-      MLFLOW_TRACKING_URI:    http://host.docker.internal:5000
-      PREFECT_API_URL:        http://host.docker.internal:4200/api
-      PYTHONUNBUFFERED:       "1"
-      PREFECT_LOGGING_LEVEL:  INFO
-      RICH_FORCE_TERMINAL:    "1"
-      TERM:                   xterm-256color
-      FORCE_COLOR:            "1"
-
-  # Streamlit App
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: app
-    ports:
-      - "8501:8501"
+      MLFLOW_TRACKING_URI: http://host.docker.internal:5000
+      PREFECT_API_URL:     http://host.docker.internal:4200/api
+      PYTHONUNBUFFERED:    "1"
+      PREFECT_LOGGING_LEVEL: INFO
+      RICH_FORCE_TERMINAL:  "1"
+      TERM:                 xterm-256color
+      FORCE_COLOR:          "1"
     depends_on:
-      - mlflow
-    volumes:
-      - ~/.cache/pip:/root/.cache/pip:rw
+      mlflow:  { condition: service_started }
+      prefect: { condition: service_started }
+
+  app:
+    build: { context: ., target: app }
+    ports: [ "8501:8501" ]
+    volumes: [ ~/.cache/pip:/root/.cache/pip:rw ]
     environment:
       MLFLOW_TRACKING_URI: http://mlflow:5000
+    depends_on: [ mlflow ]
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mlflow
+      POSTGRES_PASSWORD: mlflow
+      POSTGRES_DB: mlflow
+    volumes: [ db_data:/var/lib/postgresql/data ]
 
 volumes:
-  mlflow_runs:
+  db_data:
   prefect_home:
