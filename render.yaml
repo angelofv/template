@@ -10,8 +10,7 @@ services:
     env: docker
     plan: free
     dockerContext: .
-    dockerfilePath: Dockerfile
-    dockerBuildTarget: mlflow 
+    dockerfilePath: Dockerfile.mlflow
     autoDeploy: true
     healthCheckPath: /
 
@@ -34,8 +33,7 @@ services:
     env: docker
     plan: free
     dockerContext: .
-    dockerfilePath: Dockerfile
-    dockerBuildTarget: app
+    dockerfilePath: Dockerfile.streamlit
     autoDeploy: true
     healthCheckPath: /
 
