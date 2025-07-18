@@ -1,64 +1,30 @@
-# render.yaml
-
 databases:
   - name: mlflow-db
-    plan: free        # Postgres Free (256 Mo RAM + 256 Mo disque)
+    plan: free
 
 services:
-  # ──────────────── MLflow Server ─────────────────
   - name: mlflow
     type: web
     env: docker
     plan: free
-    autoDeploy: true            # rebuild & redeploy on git push
-    buildCommand: |
-      docker build \
-        --target mlflow \
-        -f Dockerfile \
-        -t mlflow-server:latest \
-        .
-    startCommand: /entrypoint.sh
-    healthCheckPath: /          # GET / doit renvoyer 200 (MLflow UI)
+    autoDeploy: true
+    healthCheckPath: /
+    environmentGroups:
+      - aws-mlflow-secrets
     envVars:
       - key: MLFLOW_BACKEND_URI
         fromDatabase:
           name: mlflow-db
           property: connectionString
-      - key: MLFLOW_S3_BUCKET
-        fromSecret: MLFLOW_S3_BUCKET
-      - key: AWS_ACCESS_KEY_ID
-        fromSecret: AWS_ACCESS_KEY_ID
-      - key: AWS_SECRET_ACCESS_KEY
-        fromSecret: AWS_SECRET_ACCESS_KEY
-      - key: AWS_DEFAULT_REGION
-        fromSecret: AWS_DEFAULT_REGION
 
-  # ───────────── Streamlit App ────────────────────
   - name: streamlit
     type: web
     env: docker
     plan: free
     autoDeploy: true
-    buildCommand: |
-      docker build \
-        --target app \
-        -f Dockerfile \
-        -t streamlit-ui:latest \
-        .
-    startCommand: >
-      streamlit run app/app.py \
-        --server.address=0.0.0.0 \
-        --server.port=8501 \
-        --server.headless true
-    healthCheckPath: /          # GET / doit renvoyer 200 (Streamlit)
+    healthCheckPath: /
+    environmentGroups:
+      - aws-mlflow-secrets
     envVars:
       - key: MLFLOW_TRACKING_URI
         value: http://mlflow:5000
-      - key: MLFLOW_S3_BUCKET
-        fromSecret: MLFLOW_S3_BUCKET
-      - key: AWS_ACCESS_KEY_ID
-        fromSecret: AWS_ACCESS_KEY_ID
-      - key: AWS_SECRET_ACCESS_KEY
-        fromSecret: AWS_SECRET_ACCESS_KEY
-      - key: AWS_DEFAULT_REGION
-        fromSecret: AWS_DEFAULT_REGION
