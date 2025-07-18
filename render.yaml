@@ -1,0 +1,31 @@
+databases:
+  - name: mlflow-db
+    plan: free        # Postgres Free (256 Mo RAM + 256 Mo disque)
+
+services:
+  - name: mlflow
+    type: web
+    env: docker
+    plan: free
+    dockerContext: template           # dossier où est ton Dockerfile
+    dockerfilePath: template/Dockerfile
+    autoDeploy: true                  # Git push → build & deploy
+    healthCheckPath: /
+    envVars:
+      # 1) Tracking store dans la base Postgres fournie par Render
+      - key: MLFLOW_BACKEND_URI
+        fromDatabase:
+          name: mlflow-db
+          property: connectionString
+
+      # 2) Artefacts dans ton bucket S3
+      - key: MLFLOW_S3_BUCKET
+        fromSecret: MLFLOW_S3_BUCKET
+
+      # 3) Crédentiels AWS (à saisir dans Settings → Environment Secrets)
+      - key: AWS_ACCESS_KEY_ID
+        fromSecret: AWS_ACCESS_KEY_ID
+      - key: AWS_SECRET_ACCESS_KEY
+        fromSecret: AWS_SECRET_ACCESS_KEY
+      - key: AWS_DEFAULT_REGION
+        fromSecret: AWS_DEFAULT_REGION
