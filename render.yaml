@@ -20,13 +20,13 @@ services:
           name: mlflow-db
           property: connectionString
       - key: MLFLOW_S3_BUCKET
-        fromSecret: MLFLOW_S3_BUCKET
+        sync: false
       - key: AWS_ACCESS_KEY_ID
-        fromSecret: AWS_ACCESS_KEY_ID
+        sync: false
       - key: AWS_SECRET_ACCESS_KEY
-        fromSecret: AWS_SECRET_ACCESS_KEY
+        sync: false
       - key: AWS_DEFAULT_REGION
-        fromSecret: AWS_DEFAULT_REGION
+        sync: false
 
   - name: streamlit
     type: web
@@ -41,10 +41,10 @@ services:
       - key: MLFLOW_TRACKING_URI
         value: http://mlflow:5000
       - key: MLFLOW_S3_BUCKET
-        fromSecret: MLFLOW_S3_BUCKET
+        sync: false
       - key: AWS_ACCESS_KEY_ID
-        fromSecret: AWS_ACCESS_KEY_ID
+        sync: false
       - key: AWS_SECRET_ACCESS_KEY
-        fromSecret: AWS_SECRET_ACCESS_KEY
+        sync: false
       - key: AWS_DEFAULT_REGION
-        fromSecret: AWS_DEFAULT_REGION
+        sync: false
