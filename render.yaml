@@ -10,20 +10,22 @@ services:
     type: web
     env: docker
     plan: free
-    dockerContext: .
-    dockerfilePath: Dockerfile
-    autoDeploy: true      # rebuild & redeploy on git push
-    healthCheckPath: /    # GET / doit renvoyer 200 (MLflow UI)
+    autoDeploy: true            # rebuild & redeploy on git push
+    buildCommand: |
+      docker build \
+        --target mlflow \
+        -f Dockerfile \
+        -t mlflow-server:latest \
+        .
+    startCommand: /entrypoint.sh
+    healthCheckPath: /          # GET / doit renvoyer 200 (MLflow UI)
     envVars:
-      # 1) Métadonnées : Postgres géré par Render
       - key: MLFLOW_BACKEND_URI
         fromDatabase:
           name: mlflow-db
           property: connectionString
-      # 2) Artefacts : bucket S3 (défini dans Settings → Secrets)
       - key: MLFLOW_S3_BUCKET
         fromSecret: MLFLOW_S3_BUCKET
-      # 3) Crédentiels AWS (à saisir dans Settings → Secrets)
       - key: AWS_ACCESS_KEY_ID
         fromSecret: AWS_ACCESS_KEY_ID
       - key: AWS_SECRET_ACCESS_KEY
@@ -36,16 +38,22 @@ services:
     type: web
     env: docker
     plan: free
-    dockerContext: .
-    dockerfilePath: Dockerfile
-    autoDeploy: true      # rebuild & redeploy on git push
-    healthCheckPath: /    # GET / doit renvoyer 200 (Streamlit renvoie 200)
-
+    autoDeploy: true
+    buildCommand: |
+      docker build \
+        --target app \
+        -f Dockerfile \
+        -t streamlit-ui:latest \
+        .
+    startCommand: >
+      streamlit run app/app.py \
+        --server.address=0.0.0.0 \
+        --server.port=8501 \
+        --server.headless true
+    healthCheckPath: /          # GET / doit renvoyer 200 (Streamlit)
     envVars:
-      # On pointe Streamlit vers MLflow en interne (réseau privé Render)
       - key: MLFLOW_TRACKING_URI
         value: http://mlflow:5000
-      # Si besoin d’écrire/artéfacts depuis Streamlit :
       - key: MLFLOW_S3_BUCKET
         fromSecret: MLFLOW_S3_BUCKET
       - key: AWS_ACCESS_KEY_ID
@@ -54,4 +62,3 @@ services:
         fromSecret: AWS_SECRET_ACCESS_KEY
       - key: AWS_DEFAULT_REGION
         fromSecret: AWS_DEFAULT_REGION
-
