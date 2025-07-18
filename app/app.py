@@ -35,8 +35,21 @@ with st.sidebar:
     if inline:
         st.markdown(inline)
 
-st.markdown("---")
+# ───────────── Landing page ──────────────
+st.title("My ML Project")
+st.write("A concise project description.")
 
+docs_url = "a"
+repo_url = "b"
+
+if docs_url or repo_url:
+    st.subheader("Resources")
+    if docs_url:
+        st.markdown(f"📄 **Docs** – Full reference & examples [here]({docs_url}).")
+    if repo_url:
+        st.markdown(f"🐙 **Repo** – Browse the source code on GitHub [here]({repo_url}).")
+
+st.markdown("---")
 
 # ─────────── Load model from ML Registry ───────────
 @st.cache_resource

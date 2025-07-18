@@ -94,10 +94,10 @@ local-down: ## Stop all local services by port
 ################################################################################
 .PHONY: infra pipeline serve down
 
-infra: ## Start MLflow, db & Prefect via Docker
-	@echo "🚀  Launching MLflow, db & Prefect (Docker)"
-	docker compose up -d mlflow db prefect
-	@echo -n "⏳ Waiting for MLflow, db & Prefect"
+infra: ## Start MLflow & Prefect via Docker
+	@echo "🚀  Launching MLflow & Prefect (Docker)"
+	docker compose up -d mlflow prefect
+	@echo -n "⏳ Waiting for MLflow & Prefect"
 	@until curl -s http://localhost:$(MLFLOW_PORT)/ >/dev/null 2>&1 \
 	  && curl -s http://localhost:$(PREFECT_PORT)/api/health >/dev/null 2>&1; do \
 		echo -n "."; \
