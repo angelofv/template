@@ -5,16 +5,15 @@ databases:
     plan: free
 
 services:
+  # ──────────────── MLflow Server ─────────────────
   - name: mlflow
     type: web
     env: docker
     plan: free
 
-    # 1) Docker context pour buildCommand
-    dockerContext: .           # racine du repo
-    # (on ne précise plus dockerfilePath, car buildCommand l’indique)
-
-    # 2) Build seulement jusqu'à target "mlflow"
+    # Contexte pour ton buildCommand
+    dockerContext: .
+    # On build juste jusqu'au stage "mlflow"
     buildCommand: |
       docker build \
         --target mlflow \
@@ -22,17 +21,66 @@ services:
         -t mlflow-server:latest \
         .
 
-    # 3) Lancement manuel du MLflow server
+    # On lance MLflow via ton entrypoint
     startCommand: |
-      # le script ENTRYPOINT est à la racine de l’image
       /entrypoint.sh
 
     autoDeploy: true
-    healthCheckPath: /          # expose le serveur MLflow à /
+    healthCheckPath: /            # / renvoie un 200 de MLflow
 
     envVars:
+      # Metadata : Postgres géré par Render
       - key: MLFLOW_BACKEND_URI
         fromDatabase:
           name: mlflow-db
           property: connectionString
-      # (tes AWS_* et MLFLOW_S3_BUCKET restent à ajouter dans l’UI Render)
+      # Bucket S3 et creds AWS à configurer dans Settings → Secrets
+      - key: MLFLOW_S3_BUCKET
+        fromSecret: MLFLOW_S3_BUCKET
+      - key: AWS_ACCESS_KEY_ID
+        fromSecret: AWS_ACCESS_KEY_ID
+      - key: AWS_SECRET_ACCESS_KEY
+        fromSecret: AWS_SECRET_ACCESS_KEY
+      - key: AWS_DEFAULT_REGION
+        fromSecret: AWS_DEFAULT_REGION
+
+
+  # ───────────── Streamlit App ────────────────────
+  - name: streamlit
+    type: web
+    env: docker
+    plan: free
+
+    dockerContext: .
+    # On build juste jusqu'au stage "app"
+    buildCommand: |
+      docker build \
+        --target app \
+        -f Dockerfile \
+        -t streamlit-ui:latest \
+        .
+
+    # Démarrage de Streamlit sur le port 8501
+    startCommand: |
+      streamlit run app/app.py \
+        --server.address=0.0.0.0 \
+        --server.port=8501 \
+        --server.headless=true
+
+    autoDeploy: true
+    # Render détecte automatiquement le port 8501, mais on peut préciser :
+    healthCheckPath: /   # toute requête HTTP → 200
+
+    envVars:
+      # On pointe Streamlit vers ton MLflow interne
+      - key: MLFLOW_TRACKING_URI
+        value: https://mlflow.onrender.com   # Remplace par le URL exact de ton service mlflow
+      # Optionnel : même bucket S3 / creds si besoin d’écrire
+      - key: MLFLOW_S3_BUCKET
+        fromSecret: MLFLOW_S3_BUCKET
+      - key: AWS_ACCESS_KEY_ID
+        fromSecret: AWS_ACCESS_KEY_ID
+      - key: AWS_SECRET_ACCESS_KEY
+        fromSecret: AWS_SECRET_ACCESS_KEY
+      - key: AWS_DEFAULT_REGION
+        fromSecret: AWS_DEFAULT_REGION
