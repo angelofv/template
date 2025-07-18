@@ -51,14 +51,18 @@ if docs_url or repo_url:
 
 st.markdown("---")
 
+
 # ─────────── Load model from ML Registry ───────────
 @st.cache_resource
 def load_model():
     """Load the model from the MLflow Model Registry."""
-    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000"))
+    tracking_uri = os.getenv(
+        "MLFLOW_REMOTE_URI", os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
+    )
+    # Load the model from the Model Registry
+    mlflow.set_tracking_uri(tracking_uri)
     model_name = "IrisClassifier"
     model_version = "latest"
-    # Load the model from the Model Registry
     model_uri = f"models:/{model_name}/{model_version}"
     model = mlflow.sklearn.load_model(model_uri)
     return model
