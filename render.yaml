@@ -11,6 +11,7 @@ services:
     plan: free
     dockerContext: .
     dockerfilePath: Dockerfile
+    dockerBuildTarget: mlflow 
     autoDeploy: true
     healthCheckPath: /
 
@@ -34,6 +35,7 @@ services:
     plan: free
     dockerContext: .
     dockerfilePath: Dockerfile
+    dockerBuildTarget: app
     autoDeploy: true
     healthCheckPath: /
 
