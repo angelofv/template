@@ -2,7 +2,7 @@
 
 databases:
   - name: mlflow-db
-    plan: free
+    plan: free        # Postgres Free (256 Mo RAM + 256 Mo disque)
 
 services:
   # ──────────────── MLflow Server ─────────────────
@@ -10,42 +10,48 @@ services:
     type: web
     env: docker
     plan: free
-    # on build l’image jusqu’au target "mlflow"
-    buildCommand: |
-      docker build \
-        --target mlflow \
-        -f Dockerfile \
-        -t mlflow-server:latest \
-        .
-    # on utilise l’ENTRYPOINT du Dockerfile (entrypoint.sh)
-    startCommand: |
-      /entrypoint.sh
-    autoDeploy: true
-    healthCheckPath: /
+    dockerContext: .
+    dockerfilePath: Dockerfile
+    autoDeploy: true      # rebuild & redeploy on git push
+    healthCheckPath: /    # GET / doit renvoyer 200 (MLflow UI)
     envVars:
-      - name: MLFLOW_BACKEND_URI
+      # 1) Métadonnées : Postgres géré par Render
+      - key: MLFLOW_BACKEND_URI
         fromDatabase:
           name: mlflow-db
           property: connectionString
+      # 2) Artefacts : bucket S3 (défini dans Settings → Secrets)
+      - key: MLFLOW_S3_BUCKET
+        fromSecret: MLFLOW_S3_BUCKET
+      # 3) Crédentiels AWS (à saisir dans Settings → Secrets)
+      - key: AWS_ACCESS_KEY_ID
+        fromSecret: AWS_ACCESS_KEY_ID
+      - key: AWS_SECRET_ACCESS_KEY
+        fromSecret: AWS_SECRET_ACCESS_KEY
+      - key: AWS_DEFAULT_REGION
+        fromSecret: AWS_DEFAULT_REGION
 
-  # ────────────── Streamlit UI ────────────────────
+  # ───────────── Streamlit App ────────────────────
   - name: streamlit
     type: web
     env: docker
     plan: free
-    buildCommand: |
-      docker build \
-        --target app \
-        -f Dockerfile \
-        -t streamlit-ui:latest \
-        .
-    startCommand: |
-      streamlit run app/app.py \
-        --server.address=0.0.0.0 \
-        --server.port=8501 \
-        --server.headless=true
-    autoDeploy: true
-    healthCheckPath: /
+    dockerContext: .
+    dockerfilePath: Dockerfile
+    autoDeploy: true      # rebuild & redeploy on git push
+    healthCheckPath: /    # GET / doit renvoyer 200 (Streamlit renvoie 200)
+
     envVars:
-      - name: MLFLOW_TRACKING_URI
-        value: https://<VOTRE_NOM>.onrender.com   # URL publique de votre service MLflow
+      # On pointe Streamlit vers MLflow en interne (réseau privé Render)
+      - key: MLFLOW_TRACKING_URI
+        value: http://mlflow:5000
+      # Si besoin d’écrire/artéfacts depuis Streamlit :
+      - key: MLFLOW_S3_BUCKET
+        fromSecret: MLFLOW_S3_BUCKET
+      - key: AWS_ACCESS_KEY_ID
+        fromSecret: AWS_ACCESS_KEY_ID
+      - key: AWS_SECRET_ACCESS_KEY
+        fromSecret: AWS_SECRET_ACCESS_KEY
+      - key: AWS_DEFAULT_REGION
+        fromSecret: AWS_DEFAULT_REGION
+
