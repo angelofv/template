@@ -1,18 +1,22 @@
+# render.yaml
+
 databases:
   - name: mlflow-db
-    plan: free        # Postgres Free (256 Mo RAM + 256 Mo disque)
+    plan: free
 
 services:
   - name: mlflow
     type: web
     env: docker
     plan: free
-    dockerContext: .      # Contexte Docker = la racine du repo
+    dockerContext: .                  # Contexte = racine du repo
     dockerfilePath: Dockerfile
-    autoDeploy: true      # Rebuild & redeploy à chaque git push
-    healthCheckPath: /    # GET / doit répondre 200
+    dockerBuildArgs:                  # ← on précise la target ici
+      - --target
+      - mlflow
+    autoDeploy: true
+    healthCheckPath: /
     envVars:
-      # 1) Point MLflow vers la base Postgres gérée par Render
       - key: MLFLOW_BACKEND_URI
         fromDatabase:
           name: mlflow-db
