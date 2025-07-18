@@ -8,8 +8,8 @@ services:
     type: web
     env: docker
     plan: free
-    dockerContext: template
-    dockerfilePath: template/Dockerfile
+    dockerContext: .
+    dockerfilePath: Dockerfile
     autoDeploy: true
     healthCheckPath: /
     envVars:
