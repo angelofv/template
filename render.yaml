@@ -1,30 +1,60 @@
+# render.yaml
+
 databases:
   - name: mlflow-db
     plan: free
 
 services:
+  # ──────────────── MLflow Server ─────────────────
   - name: mlflow
     type: web
     env: docker
     plan: free
+    dockerContext: .          # contexte = la racine où est ton Dockerfile
+    dockerfilePath: Dockerfile
     autoDeploy: true
     healthCheckPath: /
-    environmentGroups:
-      - aws-mlflow-secrets
+
     envVars:
+      # 1) Tracking store (Postgres géré par Render)
       - key: MLFLOW_BACKEND_URI
         fromDatabase:
           name: mlflow-db
           property: connectionString
 
+      # 2) Artefacts dans S3
+      - key: MLFLOW_S3_BUCKET
+        fromSecret: MLFLOW_S3_BUCKET
+
+      # 3) Crédentials AWS
+      - key: AWS_ACCESS_KEY_ID
+        fromSecret: AWS_ACCESS_KEY_ID
+      - key: AWS_SECRET_ACCESS_KEY
+        fromSecret: AWS_SECRET_ACCESS_KEY
+      - key: AWS_DEFAULT_REGION
+        fromSecret: AWS_DEFAULT_REGION
+
+  # ───────────── Streamlit App ────────────────────
   - name: streamlit
     type: web
     env: docker
     plan: free
+    dockerContext: .
+    dockerfilePath: Dockerfile
     autoDeploy: true
     healthCheckPath: /
-    environmentGroups:
-      - aws-mlflow-secrets
+
     envVars:
+      # On pointe Streamlit vers MLflow dans le même réseau Render
       - key: MLFLOW_TRACKING_URI
         value: http://mlflow:5000
+
+      # (Si ton front écrit dans S3 ou appelle AWS)
+      - key: MLFLOW_S3_BUCKET
+        fromSecret: MLFLOW_S3_BUCKET
+      - key: AWS_ACCESS_KEY_ID
+        fromSecret: AWS_ACCESS_KEY_ID
+      - key: AWS_SECRET_ACCESS_KEY
+        fromSecret: AWS_SECRET_ACCESS_KEY
+      - key: AWS_DEFAULT_REGION
+        fromSecret: AWS_DEFAULT_REGION
